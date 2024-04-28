@@ -16,11 +16,13 @@ import { IDelegatedEnumerable } from "../interfaces/IDelegatedEnumerable";
 
 
 export abstract class DelegatedEnumerable<T, TOut extends IEnumerable<T>> implements IDelegatedEnumerable<T, TOut> {
+  protected isEnumerated = false;
   protected source: IEnumerable<T>;
   protected abstract createInstance(source: IEnumerable<T>): TOut;
   // [index: number]: T;
-  constructor(source: IEnumerable<T>) {
+  constructor(source: IEnumerable<T>, isEnumerated: boolean) {
     this.source = source;
+    this.isEnumerated = isEnumerated;
     return new Proxy(this, {
       get(target, prop) {
         if (!(prop in target) && typeof prop === "string" && `${Number(prop)}` === prop) {
@@ -153,9 +155,6 @@ export abstract class DelegatedEnumerable<T, TOut extends IEnumerable<T>> implem
   ): IEnumerable<TResult> {
     return this.source.groupJoin(inner, outerKeySelector, innerKeySelector, resultSelector, comparer);
   }
-  toString(): string {
-    return [...this.source].toString();
-  }
   toDictionary<TKey, TValue = T>(
     keySelector: Selector<T, TKey>,
     valueSelector: Selector<T, TValue>,
@@ -174,4 +173,5 @@ export abstract class DelegatedEnumerable<T, TOut extends IEnumerable<T>> implem
   [Symbol.iterator](): IterableIterator<T> {
     return this.source[Symbol.iterator]();
   }
+
 }

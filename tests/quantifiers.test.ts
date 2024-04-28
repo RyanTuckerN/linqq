@@ -1,4 +1,4 @@
-import linq from "..";
+import linq from "../src";
 
 test(" *** Quantifiers ***", () => {
   expect(emptyLinqArray).toHaveProperty("any");

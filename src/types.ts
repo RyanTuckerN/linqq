@@ -1,6 +1,11 @@
 import { IDictionaryService } from "./services/dictionary-service";
+import { IEnumerableService } from "./services/enumerable-service";
 import { IGroupingService } from "./services/grouping-service";
 import { IOrderedEnumerableService } from "./services/ordered-enumerable-service";
+
+export interface ICanEnumerate<T> {
+  [Symbol.iterator](): Iterator<T>;
+}
 
 export type Numeric = number | bigint;
 export type Comparable = number | bigint | Date;
@@ -13,11 +18,10 @@ export type Sorter<T> = Comparer<T, number>;
 export type Selector<T, TResult> = (item: T) => TResult;
 export type NumericSelector<T> = Selector<T, number>;
 export type Predicate<T> = (item: T) => boolean;
-export interface IEnumerableConfig {
-  // dictionaryService: IDictionaryService;
-  // orderedEnumerableService: IOrderedEnumerableService;
-  // groupingService: IGroupingService;
-  createDictionary: IDictionaryService["createDictionary"];
-  createOrderedEnumerable: IOrderedEnumerableService["createOrderedEnumerable"];
+export interface IEnumerableFactory {
+  createEnumerable: IEnumerableService["create"];
+  createDictionary: IDictionaryService["create"];
+  createOrderedEnumerable: IOrderedEnumerableService["create"];
   createGrouping: IGroupingService["create"];
+
 }

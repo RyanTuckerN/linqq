@@ -3,8 +3,8 @@ import { IDictionary } from "../interfaces/IDictionary";
 import { IEnumerable } from "../interfaces/IEnumerable";
 import { LinqUtils } from "../util";
 
-export interface IDictionaryService {
-  createDictionary<TSource, TKey, TValue>(
+export interface IDictionaryService  {
+  create<TSource, TKey, TValue>(
     source: IEnumerable<TSource>,
     keySelector: (x: TSource, index: number) => TKey,
     valueSelector?: (x: TSource, index: number) => TValue,
@@ -12,10 +12,10 @@ export interface IDictionaryService {
 }
 
 export class DictionaryService implements IDictionaryService {
-  createDictionary<TSource, TKey, TValue>(
+  create<TSource, TKey, TValue>(
     source: IEnumerable<TSource>,
     keySelector: (x: TSource, index: number) => TKey,
-    valueSelector: (x: TSource, index: number) => TValue = LinqUtils.defaultSelector
+    valueSelector: (x: TSource, index: number) => TValue = LinqUtils.defaultSelector,
   ): IDictionary<TKey, TValue> {
     return Dictionary.createDictionary(source, keySelector, valueSelector);
   }

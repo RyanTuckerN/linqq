@@ -64,7 +64,6 @@ export interface IEnumerable<T> {
     resultSelector: (x: T, y: IEnumerable<TInner>) => TResult,
     comparer?: EqualityComparer<TKey>,
   ): IEnumerable<TResult>;
-  toString(): string;
   [Symbol.iterator](): IterableIterator<T>;
   toDictionary<TKey, TValue = T>(
     keySelector: Selector<T, TKey>,

@@ -1,74 +1,59 @@
 import {
-  EqualityComparer,
-  Comparable,
   Numeric,
   Predicate,
   Selector,
   NumericSelector,
-  Orderable,
-  Sorter,
 } from "../types";
-import { IDictionary } from "./IDictionary";
-import { IGrouping } from "./IGrouping";
-import { IOrderedEnumerable } from "./IOrderedEnumerable";
+import { IGrouping, IOutEnumerable, IOrderable, IEqualityComparer } from "./";
 
-export interface IEnumerable<T> {
+export interface IEnumerable<T, TOut = T> extends IOutEnumerable<T, TOut>, IOrderable<T>, Iterable<T> {
+  // materialize and return an array
   toArray(): T[];
-  append(element: T): IEnumerable<T>;
-  reverse(): IEnumerable<T>;
-  forEach(action: (x: T, i: number) => void): void;
-  select<TR>(selector: (x: T, i: number) => TR): IEnumerable<TR>;
-  selectMany<TR>(selector: (x: T, i: number) => TR[]): IEnumerable<TR>;
-  where(predicate: (x: T, i: number, a: T[]) => boolean): IEnumerable<T>;
-  elementAt(index: number): T;
-  elementAtOrDefault(index: number): T | undefined;
-  first(predicate?: Predicate<T>): T;
-  last(predicate?: Predicate<T>): T;
+  // materialize and return an enumerable
+  toList(): IEnumerable<T>;
+  // materialize and return the number of elements - I think we can safely skip ordering when calling count(), since we're only interested in the number of elements
   count(predicate?: Predicate<T>): number;
-  any(predicate?: (x: T, i: number) => boolean): boolean;
-  all(predicate: (x: T, i: number) => boolean): boolean;
-  contains(element: T): boolean;
-  orderBy(selector: (x: T) => Orderable): IOrderedEnumerable<T>;
-  orderByDescending(selector: (x: T) => Orderable): IOrderedEnumerable<T>;
-  take(count: number): IEnumerable<T>;
-  takeWhile(predicate: (x: T, i: number) => boolean): IEnumerable<T>;
-  skip(count: number): IEnumerable<T>;
-  skipWhile(predicate: (x: T, i: number) => boolean): IEnumerable<T>;
   sum(selector?: NumericSelector<T>): Numeric;
   sum(selector: NumericSelector<T>): Numeric;
   average(selector?: NumericSelector<T>): Numeric;
   average(selector: NumericSelector<T>): Numeric;
-  max<TResult extends Comparable>(selector?: Selector<T, TResult>): TResult;
-  min<TResult extends Comparable>(selector?: Selector<T, TResult>): TResult;
+  elementAt(index: number): T;
+  elementAtOrDefault(index: number): T | undefined;
+  first(predicate?: Predicate<T>): T;
   firstOrDefault(predicate?: Predicate<T>): T | undefined;
+  last(predicate?: Predicate<T>): T;
   lastOrDefault(predicate?: Predicate<T>): T | undefined;
-  singleOrDefault(predicate?: Predicate<T>): T | undefined;
   single(predicate?: Predicate<T>): T;
+  singleOrDefault(predicate?: Predicate<T>): T | undefined;
+  // defer execution until enumeration
+  append(element: T): IEnumerable<T>;
+
+  // defer execution until enumeration
+  reverse(): IEnumerable<T>;
+
+  // defer execution until enumeration, return a new enumerable
+  where(predicate: (x: T, i: number, a: T[]) => boolean): IEnumerable<T>;
+  // materialize and return true if the sequence is not empty - I think we can safely skip ordering when calling any(), since we're only interested in whether the sequence is empty
+  any(predicate?: (x: T, i: number) => boolean): boolean;
+  // materialize and return true if all elements satisfy the predicate - I think we can safely skip ordering when calling all(), since we're only interested in whether all elements satisfy the predicate
+  all(predicate: (x: T, i: number) => boolean): boolean;
+  // materialize and return true if the sequence contains the element - I think we can safely skip ordering when calling contains(), since we're only interested in whether the sequence contains the element
+  contains(element: T): boolean;
+
+  take(count: number): IEnumerable<T>;
+  takeWhile(predicate: (x: T, i: number) => boolean): IEnumerable<T>;
+  skip(count: number): IEnumerable<T>;
+  skipWhile(predicate: (x: T, i: number) => boolean): IEnumerable<T>;
   distinct(): IEnumerable<T>;
-  distinctBy<TKey>(keySelector: Selector<T, TKey>): IEnumerable<T>;
-  union(other: T[] | IEnumerable<T>, comparer?: EqualityComparer<T>): IEnumerable<T>;
-  intersect(other: T[] | IEnumerable<T>, comparer?: EqualityComparer<T>): IEnumerable<T>;
-  except(other: T[] | IEnumerable<T>, comparer?: EqualityComparer<T>): IEnumerable<T>;
+  union(other: T[] | IEnumerable<T>, comparer?: IEqualityComparer<T>): IEnumerable<T>;
+  intersect(other: T[] | IEnumerable<T>, comparer?: IEqualityComparer<T>): IEnumerable<T>;
+  except(other: T[] | IEnumerable<T>, comparer?: IEqualityComparer<T>): IEnumerable<T>;
   concat(...args: (T | T[])[]): IEnumerable<T>;
-  join<TInner, TKey, TResult>(
-    inner: TInner[] | IEnumerable<TInner>,
-    outerKeySelector: Selector<T, TKey>,
-    innerKeySelector: Selector<TInner, TKey>,
-    resultSelector: (x: T, y: TInner) => TResult,
-    comparer?: EqualityComparer<TKey>,
-  ): IEnumerable<TResult>;
-  groupJoin<TInner, TKey, TResult>(
-    inner: TInner[] | IEnumerable<TInner>,
-    outerKeySelector: Selector<T, TKey>,
-    innerKeySelector: Selector<TInner, TKey>,
-    resultSelector: (x: T, y: IEnumerable<TInner>) => TResult,
-    comparer?: EqualityComparer<TKey>,
-  ): IEnumerable<TResult>;
-  [Symbol.iterator](): IterableIterator<T>;
-  toDictionary<TKey, TValue = T>(
-    keySelector: Selector<T, TKey>,
-    valueSelector?: Selector<T, TValue>,
-  ): IDictionary<TKey, TValue>;
   groupBy<TKey>(keySelector: Selector<T, TKey>): IEnumerable<IGrouping<TKey, T>>;
-  toList(): IEnumerable<T>;
+  [Symbol.iterator](): IterableIterator<T>;
 }
+
+
+
+//   removeAt(index: number): void;
+// }

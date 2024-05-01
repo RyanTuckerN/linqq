@@ -2,7 +2,7 @@ import linq from "../src";
 
 test("groupBy()", () => {
   const people = linq(employeesArray);
-  const groupedByAccess = people.groupBy((p) => p.accessLevel);
+  const groupedByAccess = people.groupBy((p) => p.accessLevel).toList();
   expect(groupedByAccess.count()).toBe(3);
   const guests = groupedByAccess.single((g) => g.key === AccessLevel.Guest);
   const users = groupedByAccess.single((g) => g.key === AccessLevel.User);

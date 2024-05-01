@@ -1,20 +1,17 @@
 import util from "util";
-import {
-  KeyValuePair,
-} from "../types";
-import { LinqUtils as Utils } from "../util";
-import { IEnumerable } from "../interfaces/IEnumerable";
-import { IDictionary } from "../interfaces/IDictionary";
-import { DelegatedEnumerable } from "./delegated-enumerable";
-import { Enumerable } from "./enumerable";
-export class Dictionary<TK, TV> extends DelegatedEnumerable<KeyValuePair<TK, TV>, IDictionary<TK,TV>> implements IDictionary<TK, TV> {
+import { ICanEnumerate, KeyValuePair } from "../../types";
+import { LinqUtils as Utils } from "../../util";
+import { IDictionary } from "../../interfaces/IDictionary";
+import { EnumerableBase, State } from "../Enumerable/enumerable-base";
+export class Dictionary<TK, TV> extends EnumerableBase<KeyValuePair<TK, TV>> implements IDictionary<TK, TV> {
   private _map: Map<TK, TV> = new Map();
-  protected source: IEnumerable<KeyValuePair<TK, TV>>;
-  private constructor(source: IEnumerable<KeyValuePair<TK, TV>>) {
-    super(Enumerable.empty());
+  private constructor(state: State) {
+    super(state);
     this._map = new Map<TK, TV>();
-    source.forEach(({key, value}) => this._map.set(key, value));
-    this.source = source.where((x) => this._map.has(x.key)).toList();
+    for (const { key, value } of state.source) {
+      this._map.set(key, value);
+    }
+    super.where((x) => this._map.has(x.key)); // ensure that the source is always in sync with the map
   }
 
   public get keys(): Iterable<TK> {
@@ -38,15 +35,13 @@ export class Dictionary<TK, TV> extends DelegatedEnumerable<KeyValuePair<TK, TV>
   }
 
   public remove(key: TK): boolean {
-    const sourceElement = this.source.firstOrDefault((x) => x.key === key);
-    if (sourceElement) {
-      this.source = this.source.except([sourceElement]);
-    }
     return this._map.delete(key);
   }
 
   public clear(): void {
-    this.forEach((d) => this.remove(d.key));
+    this._map.clear();
+    super.take(0);
+    super.enumerate();
   }
 
   public containsKey(key: TK): boolean {
@@ -59,13 +54,15 @@ export class Dictionary<TK, TV> extends DelegatedEnumerable<KeyValuePair<TK, TV>
   }
 
   public static createDictionary<TSource, TKey, TValue>(
-    source: IEnumerable<TSource>,
+    source: ICanEnumerate<TSource>,
     keySelector: (x: TSource, index: number) => TKey,
     valueSelector: (x: TSource, index: number) => TValue,
   ): IDictionary<TKey, TValue> {
-    const dictionary = new Dictionary(
-      source.select((val, i) => ({ key: keySelector(val, i), value: valueSelector(val, i) })),
-    );
+    const sourceArray = Array.isArray(source) ? source : [...source];
+    const dictionary = new Dictionary<TKey, TValue>({
+      source: sourceArray.map((x, i) => ({ key: keySelector(x, i), value: valueSelector(x, i) })),
+      operations: [],
+    });
     return new Proxy(dictionary, {
       get(target, property) {
         if (property in target) {
@@ -85,9 +82,11 @@ export class Dictionary<TK, TV> extends DelegatedEnumerable<KeyValuePair<TK, TV>
         return target._map.get(property as any);
       },
       set(target, property, value) {
-        if (property in target && property === 'source') {
-          target["source"] = value;
-          return true;
+        if (property in target && property === "source") {
+          // target["source"] = value;
+          console.log("source, wtf is this? Why did I add this line???");
+          console.log("was previously returning `true`, but why?");
+          // return true;
         }
         try {
           target.add({ key: property as TKey, value: value as TValue });
@@ -110,10 +109,6 @@ export class Dictionary<TK, TV> extends DelegatedEnumerable<KeyValuePair<TK, TV>
         return Object.getOwnPropertyDescriptor(target, property);
       },
     }) as IDictionary<TKey, TValue>;
-  }
-
-  protected createInstance(data: IEnumerable<KeyValuePair<TK, TV>>): IDictionary<TK, TV> {
-    return Dictionary.createDictionary(data, (x) => x.key, (x) => x.value);
   }
 
   toString() {

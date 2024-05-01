@@ -1,7 +1,8 @@
-import { Orderable, Selector } from "./types";
+import { State } from "../enumerables";
+import { Orderable, Selector } from "../types";
 
 export class LinqUtils {
-  static defaultEqualityComparer<T>(a: T, b: T): boolean {
+  static defaultComparer<T>(a: T, b: T): boolean {
     return a === b;
   }
 
@@ -11,6 +12,10 @@ export class LinqUtils {
 
   static defaultPredicate<T>(item: T): boolean {
     return true;
+  }
+
+  static defaultState<T>(source: T[] = []): State {
+    return { source, operations: [] };
   }
 
   static getOrderExpression<T>(keySelector: Selector<T, Orderable>, direction: "asc" | "desc"): (a: T, b: T) => number {

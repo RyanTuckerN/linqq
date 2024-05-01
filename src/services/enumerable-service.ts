@@ -1,12 +1,8 @@
 import { IEnumerable } from "../interfaces/IEnumerable";
-import { Enumerable, ICanEnumerate } from "..";
+import { Enumerable, ICanEnumerate, IEnumerableFactory, State } from "..";
 
-export interface IEnumerableService {
-  create<T>(data: ICanEnumerate<T>): IEnumerable<T>;
-}
-
-export class EnumerableService implements IEnumerableService {
-  create<T>(data: ICanEnumerate<T>): IEnumerable<T> {
-    return Enumerable.from(data);
+export class EnumerableService implements Pick<IEnumerableFactory, 'create'> {
+  create<T, TOut = T>(state: State): IEnumerable<TOut> {
+    return Enumerable.createFromState<TOut>(state);
   }
 }

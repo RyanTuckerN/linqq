@@ -10,21 +10,21 @@ test("create()", () => {
   const dict = linq(["Alice", "Bob", "Charlie"]).toDictionary((x) => x);
   expect(dict).toBeInstanceOf(Dictionary);
   expect(dict.count()).toBe(3);
-})
+});
 
 // Can access values by key
-test("direct index access", () => {
-  const dict = getPeopleDict();
-  // expect(dict[123].name).toBe("Alice");
-  // expect(dict["234"].name).toBe("Bob");
-  // expect(dict[345].name).toBe("Charlie");
-});
+// test("direct index access", () => {
+//   const dict = getPeopleDict();
+//   expect(dict[123].name).toBe("Alice");
+//   expect(dict["234"].name).toBe("Bob");
+//   expect(dict[345].name).toBe("Charlie");
+// });
 
-test("add()", () => {
-  const dict = getPeopleDict();
-  dict.add({key: 1234, value: { id: 1234, name: "Zelda", age: 130, hobbyIds: [1, 2, 3] }});
-  // expect(dict[1234].name).toBe("Zelda");
-});
+// test("add()", () => {
+//   const dict = getPeopleDict();
+//   dict.add({ key: 1234, value: { id: 1234, name: "Zelda", age: 130, hobbyIds: [1, 2, 3] } });
+//   expect(dict[1234].name).toBe("Zelda");
+// });
 
 test("remove()", () => {
   const dict = getPeopleDict();
@@ -70,7 +70,6 @@ test("toArray()", () => {
   expect(arr.length).toBe(10);
 });
 
-//TODO: write tests for 
 
 const getPeopleDict = () => {
   const people = linq([

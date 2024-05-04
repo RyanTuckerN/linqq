@@ -2,55 +2,52 @@ import util from "util";
 import { ICanEnumerate, KeyValuePair } from "../../types";
 import { LinqUtils as Utils } from "../../util";
 import { IDictionary } from "../../interfaces/IDictionary";
-import { EnumerableBase, State } from "../Enumerable/enumerable-base";
+import { EnumerableBase } from "../Enumerable";
+import { IEnumerable } from "../../interfaces";
+
 export class Dictionary<TK, TV> extends EnumerableBase<KeyValuePair<TK, TV>> implements IDictionary<TK, TV> {
-  private _map: Map<TK, TV> = new Map();
-  private constructor(state: State) {
-    super(state);
-    this._map = new Map<TK, TV>();
-    for (const { key, value } of state.source) {
-      this._map.set(key, value);
-    }
-    super.where((x) => this._map.has(x.key)); // ensure that the source is always in sync with the map
+  private map: Map<TK, TV>;
+  constructor(source: KeyValuePair<TK, TV>[] = []) {
+    super(source);
+    this.map = new Map<TK, TV>(source.map(({ key, value }) => [key, value]));
   }
 
   public get keys(): Iterable<TK> {
-    return this._map.keys();
+    return this.map.keys();
   }
 
   public get values(): Iterable<TV> {
-    return this._map.values();
+    return this.map.values();
   }
 
   public get entries(): Iterable<[TK, TV]> {
-    return this._map.entries();
+    return this.map.entries();
   }
 
   public add({ key, value }: KeyValuePair<TK, TV>): boolean {
-    if (this._map.has(key)) {
+    if (this.map.has(key)) {
       throw new Error(`Key ${Utils.ensureString(key)} already exists in dictionary`);
     }
-    this._map.set(key, value);
+    this.map.set(key, value);
     return true;
   }
 
   public remove(key: TK): boolean {
-    return this._map.delete(key);
+    return this.map.delete(key);
   }
 
   public clear(): void {
-    this._map.clear();
+    this.map.clear();
     super.take(0);
-    super.enumerate();
   }
 
   public containsKey(key: TK): boolean {
-    return this._map.has(key);
+    return this.map.has(key);
   }
 
   public tryGetValue(key: TK): [true, TV] | [false, undefined] {
-    const hasKey = this._map.has(key);
-    return [hasKey, hasKey ? this._map.get(key) : undefined] as any;
+    const hasKey = this.map.has(key);
+    return [hasKey, hasKey ? this.map.get(key) : undefined] as any;
   }
 
   public static createDictionary<TSource, TKey, TValue>(
@@ -59,10 +56,9 @@ export class Dictionary<TK, TV> extends EnumerableBase<KeyValuePair<TK, TV>> imp
     valueSelector: (x: TSource, index: number) => TValue,
   ): IDictionary<TKey, TValue> {
     const sourceArray = Array.isArray(source) ? source : [...source];
-    const dictionary = new Dictionary<TKey, TValue>({
-      source: sourceArray.map((x, i) => ({ key: keySelector(x, i), value: valueSelector(x, i) })),
-      operations: [],
-    });
+    const dictionary = new Dictionary<TKey, TValue>(
+      sourceArray.map((x, i) => ({ key: keySelector(x, i), value: valueSelector(x, i) })) ,
+    );
     return new Proxy(dictionary, {
       get(target, property) {
         if (property in target) {
@@ -73,13 +69,13 @@ export class Dictionary<TK, TV> extends EnumerableBase<KeyValuePair<TK, TV>> imp
         // We want to allow direct access to the dictionary values by key
         // key can be ANY type, but because we are using a proxy, the property is always a string or a symbol
         // so if the dictionary had a numeric key, we would not be able to access it directly, however...
-        if (!target._map.has(property as any)) {
-          if (typeof property === "string" && `${+property}` === property && target._map.has(+property as any)) {
-            return target._map.get(+property as any);
+        if (!target.map.has(property as any)) {
+          if (typeof property === "string" && `${+property}` === property && target.map.has(+property as any)) {
+            return target.map.get(+property as any);
           }
           throw new Error(`Key ${Utils.ensureString(property)} not found in dictionary`);
         }
-        return target._map.get(property as any);
+        return target.map.get(property as any);
       },
       set(target, property, value) {
         if (property in target && property === "source") {
@@ -96,14 +92,14 @@ export class Dictionary<TK, TV> extends EnumerableBase<KeyValuePair<TK, TV>> imp
         }
       },
       ownKeys(target: Dictionary<TKey, TValue>): ArrayLike<any> {
-        return [...target._map.keys()];
+        return [...target.map.keys()];
       },
       getOwnPropertyDescriptor(target, property) {
-        if (target._map.has(property as any)) {
+        if (target.map.has(property as any)) {
           return {
             enumerable: true,
             configurable: true,
-            value: target._map.get(property as any),
+            value: target.map.get(property as any),
           };
         }
         return Object.getOwnPropertyDescriptor(target, property);
@@ -112,11 +108,16 @@ export class Dictionary<TK, TV> extends EnumerableBase<KeyValuePair<TK, TV>> imp
   }
 
   toString() {
-    const entries = Array.from(this._map.entries())
+    const entries = Array.from(this.map.entries())
       .map(([key, value]) => `${Utils.ensureString(key)} => ${Utils.ensureString(value)}`)
       .join(", ");
-    return `Dictionary(${this._map.size}): {${entries}}`;
+    return `Dictionary(${this.map.size}): {${entries}}`;
   }
 
   [util.inspect.custom] = () => this.toString();
+
+  // @ts-ignore, this is a getter
+  next(): IteratorResult<KeyValuePair<TK, TV>> {
+    return this.source[Symbol.iterator]().next();
+  }
 }

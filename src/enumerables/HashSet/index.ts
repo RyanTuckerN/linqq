@@ -1,66 +1,90 @@
 import { IHashSet, IEqualityComparer } from "../../interfaces";
 import { UniversalEqualityComparer } from "../../util/equality-comparers.ts";
-import { State } from "../Enumerable/enumerable-base";
 
-export class HashSet<T> implements Set<T> {
-  private _map: HashMap<T>;
-  private _comparer: IEqualityComparer<T>;
+export class HashSet<T> implements Set<T>, IterableIterator<T> {
+  private map: HashMap<T>;
+  private comparer: IEqualityComparer<T>;
   constructor(source: Iterable<T> = [], equalityComparer?: IEqualityComparer<T>) {
     const comparer = equalityComparer || new UniversalEqualityComparer<T>();
     const map = new HashMap<T>();
     for (const item of source) {
       map.set(comparer.hash(item), item);
     }
-    this._map = map;
-    this._comparer = comparer;
+    this.map = map;
+    this.comparer = comparer;
   }
   [Symbol.iterator](): IterableIterator<T> {
-    return this._map.values();
+    return this.map.values();
   }
   [Symbol.toStringTag]: "HashSet" = "HashSet";
   forEach(callbackfn: (value: T, value2: T, set: Set<T>) => void, thisArg?: any): void {
-    this._map.forEach((x) => callbackfn(x, x, this), thisArg);
+    this.map.forEach((x) => callbackfn(x, x, this), thisArg);
   }
   keys = this.values;
   entries(): IterableIterator<[T, T]> {
-    return this._map.getSetEntries();
+    return this.map.getSetEntries();
+  }
+
+  intersect(other: Iterable<T>): HashSet<T> {
+    const result = new HashSet<T>([], this.comparer);
+    for (const item of other) {
+      if (this.has(item)) {
+        result.add(item);
+      }
+    }
+    return result;
+  }
+
+  except(other: Iterable<T>): HashSet<T> {
+    const result = new HashSet<T>([], this.comparer);
+    const otherSet = new HashSet<T>(other, this.comparer);
+    for (const item of this) {
+      if (!otherSet.has(item)) {
+        result.add(item);
+      }
+    }
+    return result;
   }
 
   values(): IterableIterator<T> {
-    return this._map.values();
+    return this.map.values();
   }
 
   get size(): number {
-    return this._map.size;
+    return this.map.size;
   }
 
   add(value: T): this {
-    this._map.set(this._comparer.hash(value), value);
+    this.map.set(this.comparer.hash(value), value);
     return this;
   }
 
   clear(): void {
-    this._map.clear();
+    this.map.clear();
   }
 
   delete(value: T): boolean {
-    return this._map.delete(this._comparer.hash(value));
+    return this.map.delete(this.comparer.hash(value));
   }
 
   has(value: T): boolean {
-    return this._map.has(this._comparer.hash(value));
+    return this.map.has(this.comparer.hash(value));
   }
 
   toString(): string {
-    return `HashSet(${this.size}): ${[...this._map.values()].join(", ")}`;
+    return `HashSet(${this.size}): ${[...this.map.values()].join(", ")}`;
   }
   toMap(): Map<string, T> {
-    return this._map;
+    return this.map;
+  }
+
+  next(): IteratorResult<T> {
+    return this.map.values().next();
   }
 }
 
-class HashMap<T> extends Map<string, T>{
+class HashMap<T> extends Map<string, T> {
   public getSetEntries(): IterableIterator<[T, T]> {
-    return [...this.entries()].map(([key, value]) => [value, value] as [T,T])[Symbol.iterator]();
+    return [...this.entries()].map(([_, value]) => [value, value] as [T, T])[Symbol.iterator]();
   }
 }

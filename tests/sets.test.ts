@@ -1,4 +1,4 @@
-import linq, { IStringEqualityComparer } from "../src";
+import linq, { IEqualityComparer } from "../src";
 import { LinqUtils } from "../src/util";
 import { IdEqualityComparer, ObjectReferenceEqualityComparer, UniversalEqualityComparer } from "../src/util/equality-comparers.ts";
 const add1 = { id: 99 },
@@ -89,7 +89,7 @@ test("union(), - equality comparer", () => {
       .toArray().length,
   ).toEqual(8);
 
-  const compare = (c: IStringEqualityComparer<{ id: number; name: string }>) =>
+  const compare = (c: IEqualityComparer<{ id: number; name: string }>) =>
     linq([
       { id: 1, name: "Alice" },
       { id: 2, name: "Bob" },
@@ -138,7 +138,7 @@ test("intersect(), - equality comparer", () => {
       .toArray().length,
   ).toEqual(3);
 
-  const compare = (c: IStringEqualityComparer<{ id: number; name: string }>) =>
+  const compare = (c: IEqualityComparer<{ id: number; name: string }>) =>
     linq([
       { id: 1, name: "Alice" },
       { id: 2, name: "Bob" },
@@ -191,7 +191,7 @@ test("except(), - equality comparer", () => {
       .toArray().length,
   ).toEqual(3);
 
-  const compare = (c: IStringEqualityComparer<{ id: number; name: string }>) =>
+  const compare = (c: IEqualityComparer<{ id: number; name: string }>) =>
     linq([
       { id: 1, name: "Alice" },
       { id: 2, name: "Bob" },

@@ -1,4 +1,5 @@
-import linq, { EnumerableBase } from "../src";
+import linq from "../src";
+import { EnumerableBase } from "../src/enumerables/Enumerable";
 
 test("linq() function should return a LinqArray", () => {
   expect(linq(numsArray)).toBeInstanceOf(EnumerableBase);

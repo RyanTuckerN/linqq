@@ -1,4 +1,4 @@
-import { State } from "../enumerables";
+import { IEnumerable } from "../interfaces";
 import { Orderable, Selector } from "../types";
 
 export class LinqUtils {
@@ -14,8 +14,8 @@ export class LinqUtils {
     return true;
   }
 
-  static defaultState<T>(source: T[] = []): State {
-    return { source, operations: [] };
+  static defaultState<T>(source: T[] = []){
+    return source as unknown as IEnumerable<T>;
   }
 
   static getOrderExpression<T>(keySelector: Selector<T, Orderable>, direction: "asc" | "desc"): (a: T, b: T) => number {

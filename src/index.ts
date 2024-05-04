@@ -1,6 +1,6 @@
 import { IEnumerable } from "./interfaces/IEnumerable";
-import { Enumerable } from "./enumerables";
 import { ICanEnumerate } from "./types";
+import { Enumerable } from "./enumerables/Enumerable";
 export * from "./enumerables";
 export * from "./types";
 export * from "./interfaces";

@@ -1,4 +1,4 @@
-import { LinqArrayValidator } from "../src/validator";
+import { Validator } from "../src/validator";
 import linq from "../src";
 
 test(" *** Element ***", () => {
@@ -24,26 +24,26 @@ test(" *** Element ***", () => {
 
 test("first()", () => {
   expect(linq(numsArray).first()).toBe(1);
-  expect(() => emptyLinqArray.first()).toThrow(LinqArrayValidator.SEQUENCE_EMPTY);
+  expect(() => emptyLinqArray.first()).toThrow(Validator.SEQUENCE_EMPTY);
 });
 
 test("last()", () => {
   expect(linq(numsArray).last()).toBe(5);
-  expect(() => emptyLinqArray.last()).toThrow(LinqArrayValidator.SEQUENCE_EMPTY);
+  expect(() => emptyLinqArray.last()).toThrow(Validator.SEQUENCE_EMPTY);
 });
 
 test("single()", () => {
   expect(linq([1]).single()).toBe(1);
-  expect(() => linq([1, 2]).single()).toThrow(LinqArrayValidator.SEQUENCE_MULTIPLE);
-  expect(() => emptyLinqArray.single()).toThrow(LinqArrayValidator.SEQUENCE_EMPTY);
-  expect(() => linq([2, 2]).single((x) => x > 1)).toThrow(LinqArrayValidator.SEQUENCE_MULTIPLE);
-  expect(() => linq([2, 2]).single((x) => x === 2)).toThrow(LinqArrayValidator.SEQUENCE_MULTIPLE);
+  expect(() => linq([1, 2]).single()).toThrow(Validator.SEQUENCE_MULTIPLE);
+  expect(() => emptyLinqArray.single()).toThrow(Validator.SEQUENCE_EMPTY);
+  expect(() => linq([2, 2]).single((x) => x > 1)).toThrow(Validator.SEQUENCE_MULTIPLE);
+  expect(() => linq([2, 2]).single((x) => x === 2)).toThrow(Validator.SEQUENCE_MULTIPLE);
 });
 
 test("elementAt()", () => {
   expect(linq(numsArray).elementAt(2)).toBe(3);
-  expect(() => emptyLinqArray.elementAt(0)).toThrow(LinqArrayValidator.SEQUENCE_EMPTY);
-  expect(() => linq(numsArray).elementAt(10)).toThrow(LinqArrayValidator.INDEX_OUT_OF_RANGE);
+  expect(() => emptyLinqArray.elementAt(0)).toThrow(Validator.SEQUENCE_EMPTY);
+  expect(() => linq(numsArray).elementAt(10)).toThrow(Validator.INDEX_OUT_OF_RANGE);
 });
 
 test("firstOrDefault()", () => {
@@ -62,8 +62,8 @@ test("lastOrDefault()", () => {
 
 test("singleOrDefault()", () => {
   expect(linq([1]).singleOrDefault()).toBe(1);
-  expect(() => linq([2, 2]).singleOrDefault()).toThrow(LinqArrayValidator.SEQUENCE_MULTIPLE);
-  expect(() => linq([2, 2]).singleOrDefault((x) => x === 2)).toThrow(LinqArrayValidator.SEQUENCE_MULTIPLE);
+  expect(() => linq([2, 2]).singleOrDefault()).toThrow(Validator.SEQUENCE_MULTIPLE);
+  expect(() => linq([2, 2]).singleOrDefault((x) => x === 2)).toThrow(Validator.SEQUENCE_MULTIPLE);
   expect(linq([2, 2]).singleOrDefault((x) => x > 2)).toBe(undefined);
   expect(emptyLinqArray.singleOrDefault()).toBe(undefined);
 });

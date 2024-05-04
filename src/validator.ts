@@ -1,6 +1,6 @@
 import { Numeric, Comparable } from "./types";
 
-export class LinqArrayValidator {
+export class Validator {
   public static SEQUENCE_EMPTY = "Sequence contains no elements" as const;
   public static SEQUENCE_EMPTY_OR_NO_MATCH = "Sequence contains no matching element" as const;
   public static SEQUENCE_MULTIPLE = "Sequence contains more than one matching element" as const;
@@ -55,9 +55,4 @@ export class LinqArrayValidator {
   private static _isComparable(n: any): n is Comparable {
     return typeof n === "number" || typeof n === "bigint" || n instanceof Date;
   }
-
-  // not currently being used
-  // private static _isOrderable(n: any): n is Orderable {
-  //   return typeof n === 'string' || typeof n === "number" || typeof n === "bigint" || n instanceof Date;
-  // }
 }

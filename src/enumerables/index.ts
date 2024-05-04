@@ -1,5 +1,4 @@
 export * from './Enumerable'
 export * from './Grouping'
-export * from './OrderedEnumerable'
 export * from './Dictionary'
 export * from './HashSet'

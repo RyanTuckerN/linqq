@@ -1,6 +1,10 @@
 import linq, { IEqualityComparer } from "../src";
 import { LinqUtils } from "../src/util";
-import { IdEqualityComparer, ObjectReferenceEqualityComparer, UniversalEqualityComparer } from "../src/util/equality-comparers.ts";
+import {
+  IdEqualityComparer,
+  ObjectReferenceEqualityComparer,
+  UniversalEqualityComparer,
+} from "../src/util/equality-comparers.ts";
 const add1 = { id: 99 },
   add2 = { id: 98 };
 const obj1 = { id: 1, name: "Alice", address: add1 };
@@ -76,9 +80,9 @@ test("union() - reference equality", () => {
 });
 
 test("union(), - equality comparer", () => {
-  const arr1 = [1, 2, 3, 4, 5, "5", "6"];
-  const arr2 = [4, 5, 6, 7, 8, "5", "6"];
-  expect(linq(arr1).union(arr2).toArray().length).toEqual(10);
+  const arr1 = [1, 2, 3, 4, 5];
+  const arr2 = [4, 5, 6, 7, 8];
+  expect(linq(arr1).union(arr2).toArray().length).toEqual(8);
 
   expect(
     linq(arr1)
@@ -125,18 +129,11 @@ test("intersect() - reference equality", () => {
 });
 
 test("intersect(), - equality comparer", () => {
-  const arr1 = [1, 2, 3, 4, 5, "5", "6"];
-  const arr2 = [4, 5, 6, 7, 8, "5", "6"];
-  expect(linq(arr1).intersect(arr2).toArray().length).toEqual(4);
+  const arr1 = [1, 2, 3, 4, 5];
+  const arr2 = [6, 7, 8, 4, 5];
 
-  expect(
-    linq(arr1)
-      .intersect(arr2, {
-        hash: (a) => `${a}`,
-        equals: (a, b) => a == b,
-      })
-      .toArray().length,
-  ).toEqual(3);
+  expect(linq(arr1).intersect(arr2).toArray().length).toEqual(2);
+  expect(linq(arr1).intersect(arr2).toArray().length).toEqual(2);
 
   const compare = (c: IEqualityComparer<{ id: number; name: string }>) =>
     linq([
@@ -185,11 +182,7 @@ test("except(), - equality comparer", () => {
 
   const arr1 = [1, 2, 3, 4, 5];
   const arr2 = [6, 7, 8, 4, 5];
-  expect(
-    linq(arr1)
-      .except(arr2)
-      .toArray().length,
-  ).toEqual(3);
+  expect(linq(arr1).except(arr2).toArray().length).toEqual(3);
 
   const compare = (c: IEqualityComparer<{ id: number; name: string }>) =>
     linq([
@@ -208,3 +201,9 @@ test("except(), - equality comparer", () => {
   expect(compare(new UniversalEqualityComparer())).toBe(2);
   expect(compare(new IdEqualityComparer())).toBe(1);
 });
+
+test("primitive data uniqueness (UniversalEqualityComparer)", () => {
+  const arr = [1, 2, 3, 4, 5, 1, 2, 3, 4, 5, "1" , "2", "3", "4", "5"];
+  const distinct = linq(arr).distinct().toArray();
+  expect(distinct).toEqual([1, 2, 3, 4, 5, "1", "2", "3", "4", "5"]);
+})

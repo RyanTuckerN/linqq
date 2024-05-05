@@ -14,8 +14,8 @@ export class LinqUtils {
     return true;
   }
 
-  static defaultState<T>(source: T[] = []){
-    return source as unknown as IEnumerable<T>;
+  static defaultSource<T>(source: T[] = []): T[]{
+    return source;
   }
 
   static getOrderExpression<T>(keySelector: Selector<T, Orderable>, direction: "asc" | "desc"): (a: T, b: T) => number {

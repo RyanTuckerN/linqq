@@ -14,8 +14,8 @@ import { IList } from "./IList";
 
 export interface IEnumerable<T> extends Iterable<T>, IterableIterator<T> {
   toArray(): T[];
-  cast<TOut>(): IEnumerable<TOut>;
   toList(): IList<T>;
+  cast<TOut>(): IEnumerable<TOut>;
   ensureList(): IList<T>;
   ensureCollection(): ICollection<T>;
   toCollection(): ICollection<T>;
@@ -36,7 +36,7 @@ export interface IEnumerable<T> extends Iterable<T>, IterableIterator<T> {
   reverse(): IEnumerable<T>;
   where(predicate: Predicate<T>): IEnumerable<T>;
   select<TOut>(selector: SelectorWithIndex<T, TOut>): IEnumerable<TOut>;
-  selectMany<TOut>(selector: SelectorWithIndex<T, TOut[]>): IEnumerable<TOut>;
+  selectMany<TOut>(selector: SelectorWithIndex<T, Iterable<TOut>>): IEnumerable<TOut>;
   max<TOut extends Comparable>(selector?: Selector<T, TOut>): TOut;
   min<TOut extends Comparable>(selector?: Selector<T, TOut>): TOut;
   join<TInner, TKey, TOut>(
@@ -72,6 +72,10 @@ export interface IEnumerable<T> extends Iterable<T>, IterableIterator<T> {
   intersect(other: T[] | IEnumerable<T>, comparer?: IEqualityComparer<T>): IEnumerable<T>;
   except(other: T[] | IEnumerable<T>, comparer?: IEqualityComparer<T>): IEnumerable<T>;
   concat(...args: (T | T[] | IEnumerable<T>)[]): IEnumerable<T>;
-  groupBy<TKey>(keySelector: Selector<T, TKey>): IEnumerable<IGrouping<TKey, T>>;
+  groupBy<TKey, TNext = T>(
+    keySelector: Selector<T, TKey>,
+    elementSelector?: Selector<T, TNext>,
+    comparer?: IEqualityComparer<TKey>,
+  ): IEnumerable<IGrouping<TKey, T>>;
   [Symbol.iterator](): IterableIterator<T>;
 }

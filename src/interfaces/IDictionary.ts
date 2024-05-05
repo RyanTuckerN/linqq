@@ -13,7 +13,9 @@ export interface IDictionary<TKey, TValue> extends IEnumerable<KeyValuePair<TKey
     entries: Iterable<[TKey, TValue]>;
     add({ key, value }: KeyValuePair<TKey, TValue>): boolean;
     remove(key: TKey): boolean;
+    set(key: TKey, value: TValue): void;
+    get(key: TKey): TValue | undefined;
     clear(): void;
     containsKey(key: TKey): boolean;
     tryGetValue(key: TKey): [true, TValue] | [false, undefined];
-}
+ };

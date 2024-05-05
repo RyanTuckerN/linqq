@@ -1,4 +1,4 @@
-import { Enumerable } from "../src/enumerables/Enumerable";
+import { Enumerable } from "../src";
 
 /* 
 empty, repeat, range

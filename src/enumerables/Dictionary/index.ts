@@ -1,5 +1,5 @@
 import util from "util";
-import { ICanEnumerate, KeyValuePair } from "../../types";
+import { KeyValuePair } from "../../types";
 import { LinqUtils as Utils } from "../../util";
 import { IDictionary } from "../../interfaces/IDictionary";
 import { EnumerableBase } from "../Enumerable";
@@ -9,7 +9,14 @@ export class Dictionary<TK, TV> extends EnumerableBase<KeyValuePair<TK, TV>> imp
   private map: Map<TK, TV>;
   constructor(source: KeyValuePair<TK, TV>[] = []) {
     super(source);
-    this.map = new Map<TK, TV>(source.map(({ key, value }) => [key, value]));
+    this.map = new Map<TK, TV>();
+    source.forEach(({ key, value }) => this.map.set(key, value));
+  }
+
+  public override *[Symbol.iterator](): IterableIterator<KeyValuePair<TK, TV>> {
+    for (const [key, value] of this.map.entries()) {
+      yield { key, value };
+    }
   }
 
   public get keys(): Iterable<TK> {
@@ -32,13 +39,20 @@ export class Dictionary<TK, TV> extends EnumerableBase<KeyValuePair<TK, TV>> imp
     return true;
   }
 
+  public set(key: TK, value: TV): void {
+    this.map.set(key, value);
+  }
+
+  public get(key: TK): TV | undefined {
+    return this.map.get(key);
+  }
+
   public remove(key: TK): boolean {
     return this.map.delete(key);
   }
 
   public clear(): void {
     this.map.clear();
-    super.take(0);
   }
 
   public containsKey(key: TK): boolean {
@@ -51,7 +65,7 @@ export class Dictionary<TK, TV> extends EnumerableBase<KeyValuePair<TK, TV>> imp
   }
 
   public static createDictionary<TSource, TKey, TValue>(
-    source: ICanEnumerate<TSource>,
+    source: Iterable<TSource>,
     keySelector: (x: TSource, index: number) => TKey,
     valueSelector: (x: TSource, index: number) => TValue,
   ): IDictionary<TKey, TValue> {
@@ -59,52 +73,11 @@ export class Dictionary<TK, TV> extends EnumerableBase<KeyValuePair<TK, TV>> imp
     const dictionary = new Dictionary<TKey, TValue>(
       sourceArray.map((x, i) => ({ key: keySelector(x, i), value: valueSelector(x, i) })) ,
     );
-    return new Proxy(dictionary, {
-      get(target, property) {
-        if (property in target) {
-          return target[property as keyof typeof target];
-        }
+    return dictionary;
+  }
 
-        // Ok, so here is where things get a little weird...
-        // We want to allow direct access to the dictionary values by key
-        // key can be ANY type, but because we are using a proxy, the property is always a string or a symbol
-        // so if the dictionary had a numeric key, we would not be able to access it directly, however...
-        if (!target.map.has(property as any)) {
-          if (typeof property === "string" && `${+property}` === property && target.map.has(+property as any)) {
-            return target.map.get(+property as any);
-          }
-          throw new Error(`Key ${Utils.ensureString(property)} not found in dictionary`);
-        }
-        return target.map.get(property as any);
-      },
-      set(target, property, value) {
-        if (property in target && property === "source") {
-          // target["source"] = value;
-          console.log("source, wtf is this? Why did I add this line???");
-          console.log("was previously returning `true`, but why?");
-          // return true;
-        }
-        try {
-          target.add({ key: property as TKey, value: value as TValue });
-          return true;
-        } catch (e) {
-          return false;
-        }
-      },
-      ownKeys(target: Dictionary<TKey, TValue>): ArrayLike<any> {
-        return [...target.map.keys()];
-      },
-      getOwnPropertyDescriptor(target, property) {
-        if (target.map.has(property as any)) {
-          return {
-            enumerable: true,
-            configurable: true,
-            value: target.map.get(property as any),
-          };
-        }
-        return Object.getOwnPropertyDescriptor(target, property);
-      },
-    }) as IDictionary<TKey, TValue>;
+  protected clone(): IEnumerable<KeyValuePair<TK, TV>> {
+    return new Dictionary(Array.from(this.map.entries()).map(([key, value]) => ({ key, value })));
   }
 
   toString() {

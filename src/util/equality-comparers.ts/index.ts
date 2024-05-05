@@ -6,7 +6,7 @@ export class UniversalEqualityComparer<T> implements IEqualityComparer<T> {
 
   hash(item: T): string {
     if (isPrimitive(item)) {
-      return `hash_${String(item)}`;
+      return `${typeof item}_${String(item)}`;
     } else if (isObject(item)) {
       if (!this.objectMap.has(item)) {
         this.objectMap.set(item, ++this.idCounter);

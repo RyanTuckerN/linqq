@@ -16,6 +16,7 @@ export class Exception extends Error {
   public static notImplemented = (): Exception => new InvalidOperationException(Exception.NOT_IMPLEMENTED);
   public static indexOutOfRange = (): Exception => new IndexOutOfRangeException(Exception.INDEX_OUT_OF_RANGE);
   public static argumentNull = (paramName: string): Exception => new ArgumentNullException(Exception.ARGUMENT_NULL(paramName));
+  public static noMatch = (): Exception => new ArgumentException(Exception.NO_MATCH);
 
 }
 

@@ -33,34 +33,34 @@ test("distinct() - reference equality", () => {
   expect(linq([obj1, obj2, obj1, obj2]).distinct().toArray().length).toBe(2); // reference equality
 });
 
-// test("distinctBy()", () => {
-//   const arr = [obj1, obj2, obj3, obj4];
-//   expect(
-//     linq(arr)
-//       .distinctBy((x) => x.name)
-//       .toArray(),
-//   ).toEqual([obj1, obj2]);
+test("distinctBy()", () => {
+  const arr = [obj1, obj2, obj3, obj4];
+  expect(
+    linq(arr)
+      .distinctBy((x) => x.name)
+      .toArray(),
+  ).toEqual([obj1, obj2]);
 
-//   expect(
-//     linq(arr)
-//       .distinctBy((x) => x.id)
-//       .toArray(),
-//   ).toEqual([obj1, obj2, obj3, obj4]);
-// });
+  expect(
+    linq(arr)
+      .distinctBy((x) => x.id)
+      .toArray(),
+  ).toEqual([obj1, obj2, obj3, obj4]);
+});
 
-// test("distinctBy() - reference equality", () => {
-//   expect(
-//     linq([{ ...obj1 }, { ...obj2 }, { ...obj3 }, { ...obj4 }])
-//       .distinctBy((x) => x.address)
-//       .toArray().length,
-//   ).toBe(2); // reference equality
+test("distinctBy() - reference equality", () => {
+  expect(
+    linq([{ ...obj1 }, { ...obj2 }, { ...obj3 }, { ...obj4 }])
+      .distinctBy((x) => x.address)
+      .toArray().length,
+  ).toBe(2); // reference equality
 
-//   expect(
-//     linq([obj1, obj2, obj3, obj4])
-//       .distinctBy((x) => x)
-//       .toArray().length,
-//   ).toBe(4); // reference equality
-// });
+  expect(
+    linq([obj1, obj2, obj3, obj4])
+      .distinctBy((x) => x)
+      .toArray().length,
+  ).toBe(4); // reference equality
+});
 
 test("union()", () => {
   const arr1 = [1, 2, 3, 4, 5];

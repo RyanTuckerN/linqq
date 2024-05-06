@@ -19,6 +19,12 @@ export interface IEnumerable<T> extends Iterable<T>, IterableIterator<T> {
   ensureList(): IList<T>;
   ensureCollection(): ICollection<T>;
   toCollection(): ICollection<T>;
+  // public static TResult Aggregate<TSource,TAccumulate,TResult> (this System.Collections.Generic.IEnumerable<TSource> source, TAccumulate seed, Func<TAccumulate,TSource,TAccumulate> func, Func<TAccumulate,TResult> resultSelector);
+  aggregate<TAccumulate, TResult>(
+    seed: TAccumulate,
+    func: (acc: TAccumulate, x: T) => TAccumulate,
+    resultSelector: (acc: TAccumulate) => TResult,
+  ): TResult;
   count(predicate?: Predicate<T>): number;
   sum(selector?: NumericSelector<T>): Numeric;
   sum(selector: NumericSelector<T>): Numeric;
@@ -68,6 +74,7 @@ export interface IEnumerable<T> extends Iterable<T>, IterableIterator<T> {
   skip(count: number): IEnumerable<T>;
   skipWhile(predicate: PredicateWithIndex<T>): IEnumerable<T>;
   distinct(): IEnumerable<T>;
+  distinctBy<TOut>(selector: Selector<T, TOut>): IEnumerable<T>;
   union(other: T[] | IEnumerable<T>, comparer?: IEqualityComparer<T>): IEnumerable<T>;
   intersect(other: T[] | IEnumerable<T>, comparer?: IEqualityComparer<T>): IEnumerable<T>;
   except(other: T[] | IEnumerable<T>, comparer?: IEqualityComparer<T>): IEnumerable<T>;

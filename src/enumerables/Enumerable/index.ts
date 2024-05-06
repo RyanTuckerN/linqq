@@ -37,7 +37,8 @@ export abstract class EnumerableBase<T extends any> implements IEnumerable<T>, I
   abstract next(...args: [] | [undefined]): IteratorResult<T, any>;
 
   constructor(source: Iterable<T>) {
-    if (!(Symbol.iterator in source)) throw Exception.invalidOperation("Source is not iterable");
+    if (typeof source !== "string" && !(Symbol.iterator in source))
+      throw Exception.invalidOperation("Source is not iterable");
     this.source = cast<IEnumerable<T>>(source);
     this.sourceIterator = source[Symbol.iterator]() as IterableIterator<T>;
     this.factory = {
@@ -88,6 +89,19 @@ export abstract class EnumerableBase<T extends any> implements IEnumerable<T>, I
   selectMany<TOut>(selector: (x: T, i: number) => TOut[]): IEnumerable<TOut> {
     return cast<IEnumerable<TOut>>(new SelectManyIterator(this, selector));
   }
+
+  aggregate<TAccumulate, TResult>(
+    seed: TAccumulate,
+    func: (acc: TAccumulate, x: T) => TAccumulate,
+    resultSelector: (acc: TAccumulate) => TResult,
+  ): TResult {
+    let acc = seed;
+    for (const item of this) {
+      acc = func(acc, item);
+    }
+    return resultSelector(acc);
+  }
+
   max<TOut extends Comparable>(selector?: Selector<T, TOut> | undefined): TOut {
     let max: TOut | undefined = undefined;
     for (const item of this) {
@@ -289,6 +303,21 @@ export abstract class EnumerableBase<T extends any> implements IEnumerable<T>, I
 
   distinct(): IEnumerable<T> {
     return this.factory.create(this.distinctIterator());
+  }
+
+  distinctBy<TOut>(selector: Selector<T, TOut>): IEnumerable<T> {
+    return this.factory.create(this.distinctByIterator(selector));
+  }
+
+  protected *distinctByIterator<TOut>(selector: Selector<T, TOut>): Iterable<T> {
+    const map = new Map<TOut, T>();
+    for (const item of this) {
+      const key = selector(item);
+      if (!map.has(key)) {
+        map.set(key, item);
+        yield item;
+      }
+    }
   }
 
   protected *distinctIterator(): Iterable<T> {

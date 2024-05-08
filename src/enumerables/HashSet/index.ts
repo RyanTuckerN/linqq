@@ -1,7 +1,6 @@
-import { IHashSet, IEqualityComparer, ICollection, IDictionary, IEnumerable, IGrouping, IList, IOrderedEnumerable } from "../../interfaces";
-import { Predicate, NumericSelector, SelectorWithIndex, Comparable, Selector, Orderable, PredicateWithIndex } from "../../types";
+import { IHashSet, IEqualityComparer, IList } from "../../interfaces";
 import { UniversalEqualityComparer } from "../../util/equality-comparers.ts";
-import { EnumerableBase, List } from "../Enumerable";
+import { List } from "../Enumerable";
 
 
 export class HashSet<T> implements IHashSet<T>{

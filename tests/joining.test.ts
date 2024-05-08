@@ -1,6 +1,5 @@
 import linq from "../src";
 
-
 test(" *** Joining ***", () => {
   expect(emptyLinqArray).toHaveProperty("join");
   expect(emptyLinqArray).toHaveProperty("groupJoin");
@@ -58,7 +57,8 @@ test("groupJoin()", () => {
     (person, items) => ({ person, items: items.toArray() }),
   );
 
-  expect(result.toArray()).toEqual([
+  // mapping explicitly because TECHNICALLY the nested arrays are extended with a key property internally
+  expect(result.toArray().map((x) => ({ ...x, items: [...x.items] }))).toEqual([
     { person: alice, items: [] },
     { person: bob, items: [item1, item2] },
     { person: charlie, items: [item3, item4, item5] },
@@ -96,3 +96,22 @@ const item4 = { id: 4, createUserId: 345, name: "item4" };
 const item5 = { id: 5, createUserId: 345, name: "item5" };
 const itemsArray = [item1, item2, item3, item4, item5];
 
+test("zip()", () => {
+  const nums = linq([1, 2, 3]);
+  const letters = linq(["a", "b", "c"]);
+  const zipped = nums.zip(letters, (n, l) => `${n}${l}`).toArray();
+  expect(zipped).toEqual(["1a", "2b", "3c"]);
+
+  const zipped2 = nums.zip(letters, (n, l) => ({ n, l })).toArray();
+  expect(zipped2).toEqual([
+    { n: 1, l: "a" },
+    { n: 2, l: "b" },
+    { n: 3, l: "c" },
+  ]);
+
+  const zipped3 = nums.zip(letters, (n, l) => n + l).toArray();
+  expect(zipped3).toEqual(["1a", "2b", "3c"]);
+
+  const diffLengths = nums.zip(linq(["a", "b"]), (n, l) => `${n}${l}`).toArray();
+  expect(diffLengths).toEqual(["1a", "2b"]);
+});

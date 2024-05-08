@@ -1,4 +1,4 @@
-import { IEnumerable, IGrouping, IOrderedEnumerable, ICollection, IList, IDictionary } from ".";
+import { IEnumerable, IGrouping, IOrderedEnumerable, IList, IDictionary } from ".";
 import { Sorter } from "../types";
 
 export interface IEnumerableFactory {
@@ -6,7 +6,6 @@ export interface IEnumerableFactory {
   createGrouping<TKey, TValue>(key: TKey, source: Iterable<TValue>): IGrouping<TKey, TValue>;
   createOrderedEnumerable<T>(source: Iterable<T>, sortingExpression: Sorter<T>[]): IOrderedEnumerable<T>;
   createList<T>(source: Iterable<T>): IList<T>;
-  createCollection<T>(source: Iterable<T>): ICollection<T>;
   createDictionary<TSource, TKey, TValue>(
     source: Iterable<TSource>,
     keySelector: (x: TSource, index: number) => TKey,

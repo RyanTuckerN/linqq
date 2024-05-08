@@ -9,7 +9,6 @@ import {
   Comparable,
 } from "../types";
 import { IGrouping, IEqualityComparer, IDictionary, IOrderedEnumerable } from "./";
-import { ICollection } from "./ICollection";
 import { IList } from "./IList";
 
 export interface IEnumerable<T> extends Iterable<T>, IterableIterator<T> {
@@ -17,9 +16,6 @@ export interface IEnumerable<T> extends Iterable<T>, IterableIterator<T> {
   toList(): IList<T>;
   cast<TOut>(): IEnumerable<TOut>;
   ensureList(): IList<T>;
-  ensureCollection(): ICollection<T>;
-  toCollection(): ICollection<T>;
-  // public static TResult Aggregate<TSource,TAccumulate,TResult> (this System.Collections.Generic.IEnumerable<TSource> source, TAccumulate seed, Func<TAccumulate,TSource,TAccumulate> func, Func<TAccumulate,TResult> resultSelector);
   aggregate<TAccumulate, TResult>(
     seed: TAccumulate,
     func: (acc: TAccumulate, x: T) => TAccumulate,
@@ -78,7 +74,8 @@ export interface IEnumerable<T> extends Iterable<T>, IterableIterator<T> {
   union(other: T[] | IEnumerable<T>, comparer?: IEqualityComparer<T>): IEnumerable<T>;
   intersect(other: T[] | IEnumerable<T>, comparer?: IEqualityComparer<T>): IEnumerable<T>;
   except(other: T[] | IEnumerable<T>, comparer?: IEqualityComparer<T>): IEnumerable<T>;
-  concat(...args: (T | T[] | IEnumerable<T>)[]): IEnumerable<T>;
+  concat(...args: (Iterable<T>)[]): IEnumerable<T>;
+  zip<TOut, TSecond = T>(second: Iterable<TSecond>, selector: (f: T, s: TSecond) => TOut): IEnumerable<TOut>;
   groupBy<TKey, TNext = T>(
     keySelector: Selector<T, TKey>,
     elementSelector?: Selector<T, TNext>,

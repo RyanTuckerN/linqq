@@ -1,5 +1,4 @@
 import linq from "../src";
-import { EnumerableBase } from "../src/enumerables/Enumerable";
 
 function *iter(){
   yield 1;

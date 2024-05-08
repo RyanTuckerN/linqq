@@ -40,16 +40,6 @@ export class ObjectReferenceEqualityComparer<T extends object> implements IEqual
   }
 }
 
-export class PrimitiveEqualityComparer<T> implements IEqualityComparer<T> {
-  hash(item: T): string {
-    return `hash_${item}`;
-  }
-
-  equals(a: T, b: T): boolean {
-    return a === b;
-  }
-}
-
 export class IdEqualityComparer<TId extends Primitive, T extends { id: TId }> implements IEqualityComparer<T> {
   hash(item: T): string {
     return `hash_${String(item.id)}`;

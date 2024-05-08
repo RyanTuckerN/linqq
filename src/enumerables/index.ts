@@ -9,12 +9,26 @@ import {
   Sorter,
   KeyValuePair,
 } from "../types";
-import { IEnumerable, IDictionary, IOrderedEnumerable, IGrouping, IEqualityComparer, IList, IHashSet } from "../interfaces";
+import {
+  IEnumerable,
+  IDictionary,
+  IOrderedEnumerable,
+  IGrouping,
+  IEqualityComparer,
+  IList,
+  IHashSet,
+} from "../interfaces";
 import { Generator, QueryOptions } from "../iterators/generator";
 import { UniversalEqualityComparer } from "../util/equality-comparers.ts";
 import { LinqUtils } from "../util";
 import { Exception } from "../validator/exception";
 import { Operation } from "../iterators/operation";
+
+let i = 0;
+let logIteration: ((name: string, ...args: any[]) => void) | undefined;
+// logIteration = (name, ...args) => {
+//   console.log(name, i++, ...args);
+// };
 
 export abstract class EnumerableBase<T extends any> implements IEnumerable<T>, Iterable<T> {
   // next is implemented explicitly in the iterator classes, so we declare it abstract here
@@ -51,7 +65,7 @@ export abstract class EnumerableBase<T extends any> implements IEnumerable<T>, I
     return new WhereIterator(this, predicate);
   }
   select<TOut>(selector: (x: T, i: number) => TOut): IEnumerable<TOut> {
-    return new WhereSelectIterator(this, (x) => true, selector);
+    return new WhereSelectIterator(this, () => true, selector);
   }
 
   selectMany<TOut>(selector: SelectorWithIndex<T, Iterable<TOut>>): IEnumerable<TOut> {
@@ -255,6 +269,7 @@ abstract class IteratorBase<TSource, TNext extends any = TSource>
   public *[Symbol.iterator](): IterableIterator<TSource & TNext> {
     const iterator = this.getIterator();
     while (iterator.moveNext()) {
+      logIteration?.("IteratorBase ");
       yield iterator.current as TNext & TSource;
     }
   }
@@ -301,6 +316,7 @@ export class WhereIterator<TSource> extends IteratorBase<TSource> {
     while (!(result = this.sourceIterator.next()).done) {
       if (this._predicate(result.value)) {
         this.current = result.value;
+        logIteration?.("WhereIterator ");
         return true;
       }
     }
@@ -316,11 +332,25 @@ export class WhereIterator<TSource> extends IteratorBase<TSource> {
   }
 
   public override where(predicate: (x: TSource) => boolean): IEnumerable<TSource> {
-    return new WhereIterator(this, (x) => predicate(x) && this._predicate(x));
+    return new WhereIterator(this.source, WhereIterator.combinePredicates(this._predicate, predicate));
   }
 
   public override select<TOut>(selector: (x: TSource, i: number) => TOut): IEnumerable<TOut> {
-    return new WhereSelectIterator(this, this._predicate, selector);
+    return new WhereSelectIterator(this.source, this._predicate, selector);
+  }
+
+  private static combinePredicates<TSource>(
+    predicate1: (item: TSource) => boolean,
+    predicate2: (item: TSource) => boolean,
+  ): (item: TSource) => boolean {
+    return (item) => predicate1(item) && predicate2(item);
+  }
+
+  private static combineSelectors<TSource, TMiddle, TResult>(
+    selector1: (item: TSource) => TMiddle,
+    selector2: (item: TMiddle) => TResult,
+  ): (item: TSource) => TResult {
+    return (item) => selector2(selector1(item)) as TResult;
   }
 }
 
@@ -339,26 +369,21 @@ export class SelectManyIterator<TSource, TResult> extends IndexIterator<TSource,
   }
 
   public moveNext(): boolean {
-    if (this.innerIterator) {
-      const result = this.innerIterator.next();
-      if (!result.done) {
-        this.current = result.value;
-        return true;
+    while (true) {
+      if (this.innerIterator) {
+        const result = this.innerIterator.next();
+        logIteration?.("SelectManyIterator ");
+        if (!result.done) {
+          this.current = result.value;
+          return true;
+        }
+        this.innerIterator = null;
       }
+      const sourceResult = this.sourceIterator.next();
+      if (sourceResult.done) return false;
+      const innerIterable = this.selector(sourceResult.value, this.index++);
+      this.innerIterator = innerIterable[Symbol.iterator]();
     }
-
-    let sourceResult;
-    while (!(sourceResult = this.sourceIterator.next()).done) {
-      const inner = this.selector(sourceResult.value, this.index++);
-      this.innerIterator = inner[Symbol.iterator]();
-      const result = this.innerIterator.next();
-      if (!result.done) {
-        this.current = result.value;
-        return true;
-      }
-    }
-
-    return false;
   }
 
   public clone(): SelectManyIterator<TSource, TResult> {
@@ -378,6 +403,7 @@ export class WhereSelectIterator<TSource, TResult> extends IndexIterator<TSource
   public moveNext(): boolean {
     let result;
     while (!(result = this.sourceIterator.next()).done) {
+      logIteration?.("WhereSelectIterator ");
       if (!this.predicate || this.predicate(result.value)) {
         this.current = this.selector(result.value, this.index++);
         return true;
@@ -422,6 +448,7 @@ export class OrderedEnumerable<T> extends IndexIterator<T> implements IOrderedEn
     }
     if (this.index < this.sorted!.length) {
       this.current = this.sorted![this.index++];
+
       return true;
     }
     return false;
@@ -437,6 +464,9 @@ export class OrderedEnumerable<T> extends IndexIterator<T> implements IOrderedEn
     // or just use the built in sort?
     const data = Array.isArray(this.source) ? this.source : Array.from(this.source);
     this.sorted = data.sort((a, b) => {
+      logIteration?.(
+        `OrderedEnumerable sort(), just copied and now applying sort criteria, ${this.criteria.length} criteria and ${data.length} items`,
+      );
       for (const criterion of this.criteria) {
         const keyA = criterion.selector(a);
         const keyB = criterion.selector(b);
@@ -467,10 +497,12 @@ export class JoinIterator<TOuter, TInner, TKey, TResult> extends IteratorBase<TO
     this.lookup ??= Lookup.create(this.inner, this.innerKeySelector, (x) => x, this.comparer);
     let result;
     while (!(result = this.sourceIterator.next()).done) {
+      logIteration?.("JoinIterator ");
       const key = this.outerKeySelector(result.value);
       const inners = this.lookup.getGrouping(key, false);
       if (inners) {
         for (const innerItem of inners) {
+          logIteration?.("JoinIterator inner");
           this.current = this.resultSelector(result.value, innerItem);
           return true;
         }
@@ -505,6 +537,7 @@ export class GroupJoinIterator<TOuter, TInner, TKey, TResult> extends IteratorBa
       const key = this.outerKeySelector(result.value);
       const inner = Enumerable.from(this.lookup.getGrouping(key, false) ?? []);
       this.current = this.resultSelector(result.value, inner);
+      logIteration?.("GroupJoinIterator ");
       return true;
     }
     return false;
@@ -547,6 +580,7 @@ export class Grouping<TKey, TValue> extends EnumerableBase<TValue> implements IG
 
   *[Symbol.iterator](): IterableIterator<TValue> {
     for (const item of this.source) {
+      logIteration?.("Grouping ");
       yield item;
     }
   }
@@ -570,6 +604,7 @@ export class GroupingIterator<TKey, TSource, TNext = TSource> extends IteratorBa
 
     let result;
     while (!(result = this.lookupIterator.next()).done) {
+      logIteration?.("GroupingIterator ");
       const key = result.value.key;
       const grouping = result.value;
       this.current = Grouping.createGrouping<TKey, TNext>(
@@ -783,6 +818,7 @@ export class Lookup<TKey, T> implements Iterable<KeyedArray<TKey, T>> {
   ): Lookup<TKey, TNext> {
     const lookup = new Lookup<TKey, TNext>(comparer);
     for (const item of source) {
+      logIteration?.("Lookup create ");
       const key = keySelector(item);
       lookup.getGrouping(key, true).push(elementSelector(item));
     }
@@ -796,7 +832,7 @@ class KeyedArray<TKey, T> extends Array<T> {
   }
 }
 
-export class HashSet<T> implements IHashSet<T>{
+export class HashSet<T> implements IHashSet<T> {
   private map: HashMap<T>;
   private comparer: IEqualityComparer<T>;
   constructor(source: Iterable<T> = [], equalityComparer?: IEqualityComparer<T>) {
@@ -868,11 +904,24 @@ class HashMap<T> extends Map<string, T> {
     return [...this.entries()].map(([_, value]) => [value, value] as [T, T])[Symbol.iterator]();
   }
 }
-export class Dictionary<TK, TV> extends EnumerableBase<KeyValuePair<TK, TV>> implements IDictionary<TK, TV> {
+export class Dictionary<TK, TV, TPrev = TV>
+  extends EnumerableBase<KeyValuePair<TK, TV>>
+  implements IDictionary<TK, TV>
+{
   private map: Map<TK, TV>;
-  constructor(protected source: KeyValuePair<TK, TV>[] = []) {
+  constructor(
+    protected source: Iterable<TPrev>,
+    keySelector: (x: TPrev, index: number) => TK,
+    valueSelector?: (x: TPrev, index: number) => TV,
+  ) {
     const map = new Map<TK, TV>();
-    source.forEach(({ key, value }) => map.set(key, value));
+    let index = 0;
+    for (const item of source) {
+      const key = keySelector(item, index);
+      const value = valueSelector ? valueSelector(item, index) : (item as TV & TPrev);
+      map.set(key, value);
+      index++;
+    }
     super(Dictionary.fromMap(map));
     this.map = map;
   }
@@ -941,15 +990,8 @@ export class Dictionary<TK, TV> extends EnumerableBase<KeyValuePair<TK, TV>> imp
   ): IDictionary<TKey, TValue> {
     if (!source) throw Exception.argumentNull("source");
     if (!keySelector) throw Exception.argumentNull("keySelector");
-    const sourceArray = Array.isArray(source) ? source : [...source];
-    const dictionary = new Dictionary<TKey, TValue>(
-      sourceArray.map((x, i) => ({ key: keySelector(x, i), value: valueSelector ? valueSelector(x, i) : x })),
-    );
+    const dictionary = new Dictionary<TKey, TValue>(source as any, keySelector as any, valueSelector as any);
     return dictionary;
-  }
-
-  protected clone(): IEnumerable<KeyValuePair<TK, TV>> {
-    return new Dictionary(Array.from(this.map.entries()).map(([key, value]) => ({ key, value })));
   }
 
   toString() {

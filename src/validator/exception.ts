@@ -15,9 +15,10 @@ export class Exception extends Error {
   public static moreThanOne = (): Exception => new InvalidOperationException(Exception.SEQUENCE_MULTIPLE);
   public static notImplemented = (): Exception => new InvalidOperationException(Exception.NOT_IMPLEMENTED);
   public static indexOutOfRange = (): Exception => new IndexOutOfRangeException(Exception.INDEX_OUT_OF_RANGE);
-  public static argumentNull = (paramName: string): Exception => new ArgumentNullException(Exception.ARGUMENT_NULL(paramName));
+  public static argument = (message: string): Exception => new ArgumentException(message);
+  public static argumentNull = (paramName: string): Exception =>
+    new ArgumentNullException(Exception.ARGUMENT_NULL(paramName));
   public static noMatch = (): Exception => new ArgumentException(Exception.NO_MATCH);
-
 }
 
 class ArgumentException extends Exception {

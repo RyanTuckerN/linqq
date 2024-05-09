@@ -32,39 +32,31 @@ let logIteration: ((name: string, ...args: any[]) => void) | undefined;
 // };
 
 export abstract class EnumerableBase<T extends any> implements IEnumerable<T>, Iterable<T> {
-  // next is implemented explicitly in the iterator classes, so we declare it abstract here
-  // however, in the derived enumerable classes, we can just throw and implement the Symbol.iterator method as a generator
-  // this is because the iterator classes are the ones that actually implement the iterator protocol
-  // There is probably a better way to do this, but I haven't figured it out yet
-  next: (...args: [] | [undefined]) => IteratorResult<T, any> = () => {
-    throw new Error("Method not implemented, we use generators in this house.");
-  };
   constructor(source: Iterable<T>) {
-    if (typeof source !== "string" && !(Symbol.iterator in source))
-      throw Exception.invalidOperation("Source is not iterable");
+    validateSource(source);
   }
-  [Symbol.iterator](): IterableIterator<T> {
-    return this;
-  }
-  throw(e?: any): IteratorResult<T, any> {
-    throw new Exception(e);
-  }
+
   ensureList(): IList<T> {
     if (this instanceof List) return this;
     return this.toList();
   }
+
   toList(): IList<T> {
     return List.from([...this]);
   }
+
   toArray(): T[] {
     return [...this];
   }
+
   cast<TOut>(): IEnumerable<TOut> {
     return cast<IEnumerable<TOut>>(this);
   }
+
   where(predicate: (x: T) => boolean): IEnumerable<T> {
     return new WhereIterator(this, predicate);
   }
+
   select<TOut>(selector: (x: T, i: number) => TOut): IEnumerable<TOut> {
     return new WhereSelectIterator(this, () => true, selector);
   }
@@ -99,14 +91,17 @@ export abstract class EnumerableBase<T extends any> implements IEnumerable<T>, I
   count(predicate?: Predicate<T> | undefined): number {
     return Operation.count(this, predicate);
   }
+
   sum(selector?: NumericSelector<T> | undefined): number;
   sum(selector: NumericSelector<T>): number {
     return Operation.sum(this, selector);
   }
+
   average(selector?: NumericSelector<T> | undefined): number;
   average(selector: NumericSelector<T>): number {
     return Operation.average(this, selector);
   }
+
   join<TInner, TKey, TOut>(
     inner: IEnumerable<TInner>,
     outerKeySelector: Selector<T, TKey>,
@@ -118,6 +113,7 @@ export abstract class EnumerableBase<T extends any> implements IEnumerable<T>, I
       new JoinIterator(this, inner, outerKeySelector, innerKeySelector, resultSelector, comparer),
     );
   }
+
   groupJoin<TInner, TKey, TOut>(
     inner: IEnumerable<TInner>,
     outerKeySelector: Selector<T, TKey>,
@@ -132,30 +128,39 @@ export abstract class EnumerableBase<T extends any> implements IEnumerable<T>, I
   elementAt(index: number): T {
     return Operation.elementAt(this, index);
   }
+
   elementAtOrDefault(index: number): T | undefined {
     return Operation.elementAtOrDefault(this, index);
   }
+
   first(predicate?: Predicate<T> | undefined): T {
     return Operation.first(this, predicate);
   }
+
   firstOrDefault(predicate?: Predicate<T> | undefined): T | undefined {
     return Operation.firstOrDefault(this, predicate);
   }
+
   last(predicate?: Predicate<T> | undefined): T {
     return Operation.last(this, predicate);
   }
+
   lastOrDefault(predicate?: Predicate<T> | undefined): T | undefined {
     return Operation.lastOrDefault(this, predicate);
   }
+
   single(predicate?: Predicate<T>): T {
     return Operation.single(this, predicate);
   }
+
   singleOrDefault(predicate?: Predicate<T>): T | undefined {
     return Operation.singleOrDefault(this, predicate);
   }
+
   reverse(): IEnumerable<T> {
     return Enumerable.from(Generator.reverse(this));
   }
+
   append(element: T): IEnumerable<T> {
     return this.concat([element]);
   }
@@ -166,15 +171,19 @@ export abstract class EnumerableBase<T extends any> implements IEnumerable<T>, I
   all(predicate: PredicateWithIndex<T>): boolean {
     return Operation.all(this, predicate);
   }
+
   contains(element: T): boolean {
     return this.any((x) => x === element);
   }
+
   take(count: number): IEnumerable<T> {
     return Enumerable.from(Generator.take(this, count));
   }
+
   takeWhile(predicate: PredicateWithIndex<T>): IEnumerable<T> {
     return Enumerable.from(Generator.takeWhile(this, predicate));
   }
+
   skip(count: number): IEnumerable<T> {
     return Enumerable.from(Generator.skip(this, count));
   }
@@ -224,8 +233,25 @@ export abstract class EnumerableBase<T extends any> implements IEnumerable<T>, I
   orderBy(selector: OrderSelector<T>): IOrderedEnumerable<T> {
     return OrderedEnumerable.createOrderedEnumerable(this, [{ selector, descending: false }]);
   }
+
   orderByDescending(selector: OrderSelector<T>): IOrderedEnumerable<T> {
     return OrderedEnumerable.createOrderedEnumerable(this, [{ selector, descending: true }]);
+  }
+
+  // next is implemented explicitly in the iterator classes
+  // however, in the derived enumerable classes, we can just throw and implement the Symbol.iterator method as a generator
+  // this is because the iterator classes are the ones that actually implement the iterator protocol
+  // There is probably a better way to do this, but I haven't figured it out yet
+  next: (...args: [] | [undefined]) => IteratorResult<T, any> = () => {
+    throw new Error("Method not implemented, we use generators in this house.");
+  };
+
+  [Symbol.iterator](): IterableIterator<T> {
+    return this;
+  }
+
+  throw(e?: any): IteratorResult<T, any> {
+    throw new Exception(e);
   }
 }
 
@@ -1018,7 +1044,7 @@ export class Dictionary<TK, TV, TPrev = TV>
         target.set(propKey, value);
         return true;
       },
-    }) as IDictionary<TK, TV> & Indexable<TK, TV> & any
+    }) as IDictionary<TK, TV> & Indexable<TK, TV> & any;
   }
 
   private static *fromMap<TK, TV>(map: Map<TK, TV>): Iterable<KeyValuePair<TK, TV>> {
@@ -1103,4 +1129,9 @@ export class Dictionary<TK, TV, TPrev = TV>
 
 export function cast<T>(source: any): T {
   return source as T;
+}
+
+function validateSource<T>(source: Iterable<T>): void {
+  if (!source) throw Exception.argumentNull("source");
+  if (typeof source !== "string" || !source[Symbol.iterator]) throw Exception.argument("Source must be iterable");
 }

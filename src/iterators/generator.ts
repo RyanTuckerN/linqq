@@ -1,13 +1,8 @@
-import { EnumerableBase, Grouping, HashSet, Lookup } from "../enumerables";
+import { Grouping, HashSet, Lookup } from "../enumerables";
 import { IEqualityComparer, IEnumerable, IGrouping } from "../interfaces";
-import { PredicateWithIndex, Selector, Predicate, Comparable, SelectorWithIndex } from "../types";
+import { PredicateWithIndex, Selector, Predicate } from "../types";
 import { Exception } from "../validator/exception";
-export type QueryOptions<T, TState, TResult> = {
-  shouldYield: (item: T, state: TState) => boolean;
-  selector: (item: T, state: TState) => TResult;
-  afterYield?: (state: TState) => TState;
-  shouldBreak?: (item: TResult, state: TState) => boolean;
-};
+
 export class Generator {
   public static *range(start: number, count: number): Iterable<number> {
     while (count--) yield start++;

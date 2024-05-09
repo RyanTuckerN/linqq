@@ -19,7 +19,7 @@ import {
   IHashSet,
   Indexable,
 } from "../interfaces";
-import { Generator, QueryOptions } from "../iterators/generator";
+import { Generator } from "../iterators/generator";
 import { UniversalEqualityComparer } from "../util/equality-comparers.ts";
 import { LinqUtils } from "../util";
 import { Exception } from "../validator/exception";

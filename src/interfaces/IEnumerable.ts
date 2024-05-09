@@ -8,7 +8,7 @@ import {
   SelectorWithIndex,
   Comparable,
 } from "../types";
-import { IGrouping, IEqualityComparer, IDictionary, IOrderedEnumerable } from "./";
+import { IGrouping, IEqualityComparer, IDictionary, IOrderedEnumerable, Indexable } from "./";
 import { IList } from "./IList";
 
 export interface IEnumerable<T> extends Iterable<T>, IterableIterator<T> {
@@ -59,7 +59,7 @@ export interface IEnumerable<T> extends Iterable<T>, IterableIterator<T> {
   toDictionary<TKey, TOut = T>(
     keySelector: Selector<T, TKey>,
     valueSelector?: Selector<T, TOut>,
-  ): IDictionary<TKey, TOut>;
+  ): IDictionary<TKey, TOut> & Indexable<TKey, TOut>;
   any(predicate?: Predicate<T>): boolean;
   all(predicate: Predicate<T>): boolean;
   contains(element: T): boolean;

@@ -10,5 +10,7 @@ export interface IList<T> extends IEnumerable<T> {
   add(element: T): boolean;
   remove(element: T): boolean;
   clear(): void;
+  forEach(action: (element: T, index: number, list: this) => void): void;
   length: number;
+  [index: number]: T;
 }

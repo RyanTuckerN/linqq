@@ -13,18 +13,25 @@ test("create()", () => {
 });
 
 // Can access values by key
-// test("direct index access", () => {
-//   const dict = getPeopleDict();
-//   expect(dict[123].name).toBe("Alice");
-//   expect(dict["234"].name).toBe("Bob");
-//   expect(dict[345].name).toBe("Charlie");
-// });
+test("direct index access", () => {
+  const dict = getPeopleDict();
+  expect(dict[123].name).toBe("Alice");
+  expect(dict[345].name).toBe("Charlie");
+  expect(dict["234"].name).toBe("Bob"); // that this works is kind of a bug,but really is a feature... 
+  dict["234"] = { id: 234, name: "Bobby", age: 41, hobbyIds: [2, 3, 4, 14] };
+  expect(dict[234].name).toBe("Bobby");
+  expect(dict.get(234).name).toBe("Bobby");
+  dict[234].age = 42;
+  expect(dict[234].age).toBe(42);
+  expect(dict.get(234).age).toBe(42);
+  expect(dict.get(234).hobbyIds).toEqual([2, 3, 4, 14]);
+});
 
-// test("add()", () => {
-//   const dict = getPeopleDict();
-//   dict.add({ key: 1234, value: { id: 1234, name: "Zelda", age: 130, hobbyIds: [1, 2, 3] } });
-//   expect(dict[1234].name).toBe("Zelda");
-// });
+test("add()", () => {
+  const dict = getPeopleDict();
+  dict.add({ key: 1234, value: { id: 1234, name: "Zelda", age: 130, hobbyIds: [1, 2, 3] } });
+  expect(dict[1234].name).toBe("Zelda");
+});
 
 test("remove()", () => {
   const dict = getPeopleDict();

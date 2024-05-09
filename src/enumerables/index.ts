@@ -17,6 +17,7 @@ import {
   IEqualityComparer,
   IList,
   IHashSet,
+  Indexable,
 } from "../interfaces";
 import { Generator, QueryOptions } from "../iterators/generator";
 import { UniversalEqualityComparer } from "../util/equality-comparers.ts";
@@ -24,7 +25,7 @@ import { LinqUtils } from "../util";
 import { Exception } from "../validator/exception";
 import { Operation } from "../iterators/operation";
 
-let i = 0;
+let i = 1;
 let logIteration: ((name: string, ...args: any[]) => void) | undefined;
 // logIteration = (name, ...args) => {
 //   console.log(name, i++, ...args);
@@ -88,7 +89,10 @@ export abstract class EnumerableBase<T extends any> implements IEnumerable<T>, I
     return Operation.min(this, selector);
   }
 
-  toDictionary<TKey, TOut>(keySelector: Selector<T, TKey>, valueSelector?: Selector<T, TOut>): IDictionary<TKey, TOut> {
+  toDictionary<TKey, TOut>(
+    keySelector: Selector<T, TKey>,
+    valueSelector?: Selector<T, TOut>,
+  ): IDictionary<TKey, TOut> & Indexable<TKey, TOut> {
     return Dictionary.createDictionary<T, TKey, TOut>(this, keySelector, valueSelector);
   }
 
@@ -269,7 +273,6 @@ abstract class IteratorBase<TSource, TNext extends any = TSource>
   public *[Symbol.iterator](): IterableIterator<TSource & TNext> {
     const iterator = this.getIterator();
     while (iterator.moveNext()) {
-      logIteration?.("IteratorBase ");
       yield iterator.current as TNext & TSource;
     }
   }
@@ -459,24 +462,75 @@ export class OrderedEnumerable<T> extends IndexIterator<T> implements IOrderedEn
   }
 
   private sort(): void {
-    // should i implement a buffer?
-    // maybe quick sort?
-    // or just use the built in sort?
     const data = Array.isArray(this.source) ? this.source : Array.from(this.source);
     this.sorted = data.sort((a, b) => {
-      logIteration?.(
-        `OrderedEnumerable sort(), just copied and now applying sort criteria, ${this.criteria.length} criteria and ${data.length} items`,
-      );
       for (const criterion of this.criteria) {
         const keyA = criterion.selector(a);
         const keyB = criterion.selector(b);
         const comparison = keyA < keyB ? -1 : keyA > keyB ? 1 : 0;
         if (comparison !== 0) {
+          logIteration?.(`OrderedEnumerable sort(), comparison: ${comparison}`);
           return criterion.descending ? -comparison : comparison;
         }
       }
       return 0;
     });
+
+    // this quick sort works correctly, but it's not as efficient as the built-in sort method
+    // I'm keeping it here for testing with different data sets
+    // const quickSort = (arr: any[], left: number, right: number): void => {
+    //   let index;
+    //   if (arr.length > 1) {
+    //     index = partition(arr, left, right);
+    //     if (left < index - 1) {
+    //       logIteration?.(`quickSort left partition, size: ${index - 1 - left + 1}`);
+    //       quickSort(arr, left, index - 1);
+    //     }
+    //     if (index < right) {
+    //       logIteration?.(`quickSort right partition, size: ${right - index + 1}`);
+    //       quickSort(arr, index, right);
+    //     }
+    //   }
+    // };
+
+    // const partition = (arr: any[], left: number, right: number) => {
+    //   const pivot = arr[Math.floor((right + left) / 2)];
+    //   let i = left;
+    //   let j = right;
+    //   while (i <= j) {
+    //     while (compare(arr[i], pivot) < 0) {
+    //       logIteration?.(`partition left pointer move, index: ${i}`);
+    //       i++;
+    //     }
+    //     while (compare(arr[j], pivot) > 0) {
+    //       logIteration?.(`partition right pointer move, index: ${j}`);
+    //       j--;
+    //     }
+    //     if (i <= j) {
+    //       logIteration?.(`partition swap, indices: ${i}, ${j}`);
+    //       [arr[i], arr[j]] = [arr[j], arr[i]];
+    //       i++;
+    //       j--;
+    //     }
+    //   }
+    //   return i;
+    // };
+
+    // const compare = (a: any, b: any) => {
+    //   for (const criterion of this.criteria) {
+    //     const keyA = criterion.selector(a);
+    //     const keyB = criterion.selector(b);
+    //     const comparison = keyA < keyB ? -1 : keyA > keyB ? 1 : 0;
+    //     if (comparison !== 0) {
+    //       return criterion.descending ? -comparison : comparison;
+    //     }
+    //   }
+    //   return 0;
+    // };
+
+    // const data = Array.isArray(this.source) ? this.source : Array.from(this.source);
+    // quickSort(data, 0, data.length - 1);
+    // this.sorted = data;
   }
 }
 
@@ -624,6 +678,31 @@ export class GroupingIterator<TKey, TSource, TNext = TSource> extends IteratorBa
 export class List<T> extends Enumerable<T> implements IList<T> {
   constructor(protected source: T[]) {
     super(source);
+    return new Proxy(this, {
+      get(target, prop, receiver) {
+        if (typeof prop === "string" && !isNaN(+prop)) {
+          return target.get(+prop);
+        }
+        return Reflect.get(target, prop, receiver);
+      },
+      set(target, prop, value, receiver) {
+        if (typeof prop === "string" && !isNaN(+prop)) {
+          target.set(+prop, value);
+          return true;
+        }
+        return Reflect.set(target, prop, value, receiver);
+      },
+    });
+  }
+
+  [index: number]: T;
+
+  get(index: number): T {
+    return this.source[index];
+  }
+
+  set(index: number, value: T): void {
+    this.source[index] = value;
   }
 
   *[Symbol.iterator](): IterableIterator<T> {
@@ -662,12 +741,6 @@ export class List<T> extends Enumerable<T> implements IList<T> {
   removeAt(index: number): void {
     this.source.splice(index, 1);
   }
-  get(index: number): T {
-    return this.source[index];
-  }
-  set(index: number, element: T): void {
-    this.source[index] = element;
-  }
   isEmpty(): boolean {
     return this.source.length === 0;
   }
@@ -683,6 +756,9 @@ export class List<T> extends Enumerable<T> implements IList<T> {
   }
   clear(): void {
     this.source.splice(0, this.length);
+  }
+  forEach(action: (element: T, index: number, list: this) => void): void {
+    this.source.forEach((v, i) => action(v, i, this));
   }
 
   public override sum(selector?: NumericSelector<T> | undefined): number;
@@ -924,6 +1000,25 @@ export class Dictionary<TK, TV, TPrev = TV>
     }
     super(Dictionary.fromMap(map));
     this.map = map;
+    return new Proxy(this, {
+      get(target, prop, receiver) {
+        if (prop in target) return Reflect.get(target, prop, receiver);
+        let propKey = prop as any;
+        if (typeof propKey === "string" && !isNaN(+propKey)) {
+          propKey = +propKey;
+        }
+        return target.get(propKey);
+      },
+      set(target, prop, value, receiver) {
+        if (prop in target) return Reflect.set(target, prop, value, receiver);
+        let propKey = prop as any;
+        if (typeof propKey === "string" && !isNaN(+propKey)) {
+          propKey = +propKey;
+        }
+        target.set(propKey, value);
+        return true;
+      },
+    }) as IDictionary<TK, TV> & Indexable<TK, TV> & any
   }
 
   private static *fromMap<TK, TV>(map: Map<TK, TV>): Iterable<KeyValuePair<TK, TV>> {
@@ -962,8 +1057,9 @@ export class Dictionary<TK, TV, TPrev = TV>
     this.map.set(key, value);
   }
 
-  public get(key: TK): TV | undefined {
-    return this.map.get(key);
+  public get(key: TK): TV {
+    if (!this.map.has(key)) throw Exception.invalidOperation("Key not found in dictionary");
+    return this.map.get(key)!;
   }
 
   public remove(key: TK): boolean {
@@ -987,11 +1083,14 @@ export class Dictionary<TK, TV, TPrev = TV>
     source: Iterable<TSource>,
     keySelector: (x: TSource, index: number) => TKey,
     valueSelector?: (x: TSource, index: number) => TValue,
-  ): IDictionary<TKey, TValue> {
+  ): IDictionary<TKey, TValue> & Indexable<TKey, TValue> {
     if (!source) throw Exception.argumentNull("source");
     if (!keySelector) throw Exception.argumentNull("keySelector");
-    const dictionary = new Dictionary<TKey, TValue>(source as any, keySelector as any, valueSelector as any);
-    return dictionary;
+    return new Dictionary<TKey, TValue>(source as any, keySelector as any, valueSelector as any) as IDictionary<
+      TKey,
+      TValue
+    > &
+      Indexable<TKey, TValue>;
   }
 
   toString() {

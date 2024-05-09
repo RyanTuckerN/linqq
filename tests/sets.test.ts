@@ -1,5 +1,4 @@
 import linq, { IEqualityComparer } from "../src";
-import { LinqUtils } from "../src/util";
 import {
   IdEqualityComparer,
   ObjectReferenceEqualityComparer,

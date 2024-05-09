@@ -1,4 +1,4 @@
-import { Validator } from "../src/validator";
+import { Exception } from "../src/validator/exception";
 import linq from "../src";
 
 test(" *** Element ***", () => {
@@ -34,16 +34,16 @@ test("last()", () => {
 
 test("single()", () => {
   expect(linq([1]).single()).toBe(1);
-  expect(() => linq([1, 2]).single()).toThrow(Validator.SEQUENCE_MULTIPLE);
-  expect(() => emptyLinqArray.single()).toThrow(Validator.SEQUENCE_EMPTY);
-  expect(() => linq([2, 2]).single((x) => x > 1)).toThrow(Validator.SEQUENCE_MULTIPLE);
-  expect(() => linq([2, 2]).single((x) => x === 2)).toThrow(Validator.SEQUENCE_MULTIPLE);
+  expect(() => linq([1, 2]).single()).toThrow(Exception.SEQUENCE_MULTIPLE);
+  expect(() => emptyLinqArray.single()).toThrow(Exception.SEQUENCE_EMPTY);
+  expect(() => linq([2, 2]).single((x) => x > 1)).toThrow(Exception.SEQUENCE_MULTIPLE);
+  expect(() => linq([2, 2]).single((x) => x === 2)).toThrow(Exception.SEQUENCE_MULTIPLE);
 });
 
 test("elementAt()", () => {
   expect(linq(numsArray).elementAt(2)).toBe(3);
-  expect(() => emptyLinqArray.elementAt(0)).toThrow(Validator.INDEX_OUT_OF_RANGE);
-  expect(() => linq(numsArray).elementAt(10)).toThrow(Validator.INDEX_OUT_OF_RANGE);
+  expect(() => emptyLinqArray.elementAt(0)).toThrow(Exception.INDEX_OUT_OF_RANGE);
+  expect(() => linq(numsArray).elementAt(10)).toThrow(Exception.INDEX_OUT_OF_RANGE);
 });
 
 test("firstOrDefault()", () => {
@@ -62,8 +62,8 @@ test("lastOrDefault()", () => {
 
 test("singleOrDefault()", () => {
   expect(linq([1]).singleOrDefault()).toBe(1);
-  expect(() => linq([2, 2]).singleOrDefault()).toThrow(Validator.SEQUENCE_MULTIPLE);
-  expect(() => linq([2, 2]).singleOrDefault((x) => x === 2)).toThrow(Validator.SEQUENCE_MULTIPLE);
+  expect(() => linq([2, 2]).singleOrDefault()).toThrow(Exception.SEQUENCE_MULTIPLE);
+  expect(() => linq([2, 2]).singleOrDefault((x) => x === 2)).toThrow(Exception.SEQUENCE_MULTIPLE);
   expect(linq([2, 2]).singleOrDefault((x) => x > 2)).toBe(undefined);
   expect(emptyLinqArray.singleOrDefault()).toBe(undefined);
 });

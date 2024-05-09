@@ -1133,5 +1133,5 @@ export function cast<T>(source: any): T {
 
 function validateSource<T>(source: Iterable<T>): void {
   if (!source) throw Exception.argumentNull("source");
-  if (typeof source !== "string" || !source[Symbol.iterator]) throw Exception.argument("Source must be iterable");
+  if (typeof source !== "string" && !source[Symbol.iterator]) throw Exception.argument("Source must be iterable");
 }

@@ -1,4 +1,3 @@
-import { Validator } from "../src/validator";
 import linq from "../src";
 
 test(" *** Aggregation/Reduction ***", () => {

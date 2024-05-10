@@ -1,7 +1,7 @@
 {
-  "name": "linqjs",
+  "name": "ts-linq",
   "version": "alpha.0.1",
-  "description": "Why use Array.prototype methods, when you can use LINQ?",
+  "description": "Why use Array.prototype methods, when you can use linq?",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
@@ -11,7 +11,10 @@
   "keywords": [
     "linq",
     "ef",
-    "arrays"
+    "arrays",
+    "iterable",
+    "enumerable",
+    "list"
   ],
   "author": "Ryan Tucker",
   "license": "ISC",

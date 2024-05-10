@@ -1,19 +1,19 @@
-# linq-in-ts
+# linqq
 
 Why use array methods when you can use LINQ?
 
 ## Installation
 
 ```bash
-npm install linq-in-ts
+npm install linqq
 ```
 
 ## Usage
 
-linq-in-ts provides a fluent API for querying and manipulating data. Here's a basic example:
+linqq provides a fluent API for querying and manipulating data. Here's a basic example:
 
 ```typescript
-import linq from "linq-in-ts";
+import linq from "linqq";
 
 const numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 const result = linq(numbers)
@@ -23,27 +23,27 @@ const result = linq(numbers)
 console.log(result); // [2, 4, 6, 8, 10]
 ```
 
-linq-in-ts is heavily inspired by Microsoft's LINQ (Language Integrated Query) and provides a similar API for working with data in JavaScript and TypeScript. It offers a wide range of methods for querying, transforming, and aggregating data, making it easy to work with collections of objects, arrays, sets, and maps.
+linqq is heavily inspired by Microsoft's LINQ (Language Integrated Query) and provides a similar API for working with data in JavaScript and TypeScript. It offers a wide range of methods for querying, transforming, and aggregating data, making it easy to work with collections of objects, arrays, sets, and maps.
 
 ## Features
 
-- **Fluent API**: linq-in-ts provides a fluent API for querying and manipulating data.
+- **Fluent API**: linqq provides a fluent API for querying and manipulating data.
 - **Deferred Execution**: Operations are deferred until necessary, improving performance.
-- **Type Safety**: linq-in-ts is written in TypeScript and designed with type safety in mind.
-- **Iterable Support**: linq-in-ts works with any iterable structure, including arrays, sets, and maps.
+- **Type Safety**: linqq is written in TypeScript and designed with type safety in mind.
+- **Iterable Support**: linqq works with any iterable structure, including arrays, sets, and maps.
 
 ## Getting Started
 
-To get started with linq-in-ts, install it via npm:
+To get started with linqq, install it via npm:
 
 ```bash
-npm install linq-in-ts
+npm install linqq
 ```
 
 Then import it into your project:
 
 ```typescript
-import linq from "linq-in-ts";
+import linq from "linqq";
 ```
 
 You can then use the `linq` function to create an enumerable from an array, set, map, or other iterable structure:
@@ -71,10 +71,10 @@ const from = linq.from([1, 2, 3, 4, 5]);
 
 ### Deferred Execution
 
-In keeping with the principle of efficiency, all linq-in-ts operations are deferred until necessary. This means that the elements of the sequence are not computed or retrieved until they are enumerated. This can be beneficial for performance, especially when working with large sequences.
+In keeping with the principle of efficiency, all linqq operations are deferred until necessary. This means that the elements of the sequence are not computed or retrieved until they are enumerated. This can be beneficial for performance, especially when working with large sequences.
 
 ```typescript
-import linq from "linq-in-ts";
+import linq from "linqq";
 
 const numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 let query = linq(numbers)
@@ -94,10 +94,10 @@ const resultArray = query.toArray(); // trigger iteration/materialization and tr
 
 ### React
 
-linq-in-ts can be used in React components to manipulate data before rendering. Here's an example:
+linqq can be used in React components to manipulate data before rendering. Here's an example:
 
 ```tsx
-import linq from "linq-in-ts";
+import linq from "linqq";
 import React from "react";
 
 export const Users = ({ users }) => (
@@ -126,7 +126,7 @@ export const Users = ({ users }) => (
 
 ### Examples
 
-linq-in-ts works with any iterable structure
+linqq works with any iterable structure
 
 #### `linq<T>(array: T[]): IList<T>`
 

@@ -1,5 +1,5 @@
 {
-  "name": "ts-linq",
+  "name": "linq-in-ts",
   "version": "0.0.4",
   "description": "Why use Array.prototype methods, when you can use linq?",
   "main": "dist/index.js",

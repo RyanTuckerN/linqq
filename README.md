@@ -23,6 +23,50 @@ const result = linq(numbers)
 console.log(result); // [2, 4, 6, 8, 10]
 ```
 
+ts-linq is heavily inspired by Microsoft's LINQ (Language Integrated Query) and provides a similar API for working with data in JavaScript and TypeScript. It offers a wide range of methods for querying, transforming, and aggregating data, making it easy to work with collections of objects, arrays, sets, and maps.
+
+## Features
+
+- **Fluent API**: ts-linq provides a fluent API for querying and manipulating data.
+- **Deferred Execution**: Operations are deferred until necessary, improving performance.
+- **Type Safety**: ts-linq is written in TypeScript and designed with type safety in mind.
+- **Iterable Support**: ts-linq works with any iterable structure, including arrays, sets, and maps.
+
+## Getting Started
+
+To get started with ts-linq, install it via npm:
+
+```bash
+npm install ts-linq
+```
+
+Then import it into your project:
+
+```typescript
+import linq from "ts-linq";
+```
+
+You can then use the `linq` function to create an enumerable from an array, set, map, or other iterable structure:
+
+```typescript
+const numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+const result = linq(numbers)
+  .where((x) => x % 2 === 0)
+  .toArray();
+
+console.log(result); // [2, 4, 6, 8, 10]
+```
+
+You can also create/instantiate an enumerable with some static methods:
+
+```typescript
+
+const range = linq.range(1, 10);
+const repeat = linq.repeat("hello", 3);
+const empty = linq.empty<number>();
+const from = linq.from([1, 2, 3, 4, 5]); 
+```
+
 ## API
 
 ### Deferred Execution

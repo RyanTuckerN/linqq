@@ -49,6 +49,10 @@ export abstract class EnumerableBase<T extends any> implements IEnumerable<T>, I
     return [...this];
   }
 
+  toSet(comparer?: IEqualityComparer<T> | undefined): HashSet<T> {
+    return new HashSet(this, comparer);
+  }
+
   cast<TOut>(): IEnumerable<TOut> {
     return cast<IEnumerable<TOut>>(this);
   }

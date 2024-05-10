@@ -206,3 +206,10 @@ test("primitive data uniqueness (UniversalEqualityComparer)", () => {
   const distinct = linq(arr).distinct().toArray();
   expect(distinct).toEqual([1, 2, 3, 4, 5, "1", "2", "3", "4", "5"]);
 })
+
+
+test("toSet()", () => {
+  const arr = [1, 2, 3, 4, 5, 1, 2, 3, 4, 5];
+  const set = linq(arr).toSet().toArray();
+  expect(set).toEqual([1, 2, 3, 4, 5]);
+})

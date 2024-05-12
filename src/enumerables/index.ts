@@ -19,11 +19,11 @@ import {
   IHashSet,
   Indexable,
 } from "../interfaces";
-import { Generator } from "../iterators/generator";
 import { UniversalEqualityComparer } from "../util/equality-comparers.ts";
-import { LinqUtils } from "../util";
-import { Exception } from "../validator/exception";
+import { Generator } from "../iterators/generator";
 import { Operation } from "../iterators/operation";
+import { Exception } from "../validator/exception";
+import { Utils } from "../util";
 
 let i = 1;
 let logIteration: ((name: string, ...args: any[]) => void) | undefined;
@@ -31,10 +31,13 @@ let logIteration: ((name: string, ...args: any[]) => void) | undefined;
 //   console.log(name, i++, ...args);
 // };
 
-export abstract class EnumerableBase<T extends any> implements IEnumerable<T>, Iterable<T> {
+export abstract class EnumerableBase<T extends any> implements IEnumerable<T> {
   constructor(source: Iterable<T>) {
-    validateSource(source);
+    if (!source) throw Exception.argumentNull("source");
+    if (typeof source !== "string" && !source[Symbol.iterator]) throw Exception.argument("Source must be iterable");
   }
+
+  abstract [Symbol.iterator](): IterableIterator<T>;
 
   ensureList(): IList<T> {
     if (this instanceof List) return this;
@@ -54,7 +57,7 @@ export abstract class EnumerableBase<T extends any> implements IEnumerable<T>, I
   }
 
   cast<TOut>(): IEnumerable<TOut> {
-    return cast<IEnumerable<TOut>>(this);
+    return Utils.cast<IEnumerable<TOut>>(this);
   }
 
   where(predicate: (x: T) => boolean): IEnumerable<T> {
@@ -113,7 +116,7 @@ export abstract class EnumerableBase<T extends any> implements IEnumerable<T>, I
     resultSelector: (x: T, y: TInner) => TOut,
     comparer?: IEqualityComparer<TKey> | undefined,
   ): IEnumerable<TOut> {
-    return cast<IEnumerable<TOut>>(
+    return Utils.cast<IEnumerable<TOut>>(
       new JoinIterator(this, inner, outerKeySelector, innerKeySelector, resultSelector, comparer),
     );
   }
@@ -125,7 +128,7 @@ export abstract class EnumerableBase<T extends any> implements IEnumerable<T>, I
     resultSelector: (x: T, y: IEnumerable<TInner>) => TOut,
     comparer?: IEqualityComparer<TKey> | undefined,
   ): IEnumerable<TOut> {
-    return cast<IEnumerable<TOut>>(
+    return Utils.cast<IEnumerable<TOut>>(
       new GroupJoinIterator(this, inner, outerKeySelector, innerKeySelector, resultSelector, comparer),
     );
   }
@@ -229,7 +232,7 @@ export abstract class EnumerableBase<T extends any> implements IEnumerable<T>, I
     elementSelector?: Selector<T, TNext>,
     comparer?: IEqualityComparer<TKey>,
   ): IEnumerable<IGrouping<TKey, T>> {
-    return cast<IEnumerable<IGrouping<TKey, T>>>(
+    return Utils.cast<IEnumerable<IGrouping<TKey, T>>>(
       Enumerable.from(Generator.groupBy(this, keySelector, elementSelector, comparer)),
     );
   }
@@ -240,22 +243,6 @@ export abstract class EnumerableBase<T extends any> implements IEnumerable<T>, I
 
   orderByDescending(selector: OrderSelector<T>): IOrderedEnumerable<T> {
     return OrderedEnumerable.createOrderedEnumerable(this, [{ selector, descending: true }]);
-  }
-
-  // next is implemented explicitly in the iterator classes
-  // however, in the derived enumerable classes, we can just throw and implement the Symbol.iterator method as a generator
-  // this is because the iterator classes are the ones that actually implement the iterator protocol
-  // There is probably a better way to do this, but I haven't figured it out yet
-  next: (...args: [] | [undefined]) => IteratorResult<T, any> = () => {
-    throw new Error("Method not implemented, we use generators in this house.");
-  };
-
-  [Symbol.iterator](): IterableIterator<T> {
-    return this;
-  }
-
-  throw(e?: any): IteratorResult<T, any> {
-    throw new Exception(e);
   }
 }
 
@@ -272,13 +259,11 @@ export class Enumerable<T> extends EnumerableBase<T> implements IEnumerable<T> {
   }
 
   *[Symbol.iterator](): IterableIterator<T> {
-    for (const item of this.source) {
-      yield item;
-    }
+    yield* this.source;
   }
 
   public static empty<T>(): IEnumerable<T> {
-    return Enumerable.from<T>(LinqUtils.defaultSource());
+    return Enumerable.from<T>(Utils.defaultSource());
   }
 
   public static repeat<T>(element: T, count: number): IEnumerable<T> {
@@ -294,30 +279,24 @@ export class Enumerable<T> extends EnumerableBase<T> implements IEnumerable<T> {
   }
 }
 
-abstract class IteratorBase<TSource, TNext extends any = TSource>
-  extends EnumerableBase<TNext & TSource>
-  implements Iterable<TSource>, Iterator<TSource, TNext>
-{
+abstract class IteratorBase<TSource, TNext extends any = TSource> extends EnumerableBase<TNext & TSource> {
   protected sourceIterator = this.source[Symbol.iterator]();
   protected state = 0; // 0 = before iteration, 1 = after iteration
-  public *[Symbol.iterator](): IterableIterator<TSource & TNext> {
+  public [Symbol.iterator](): IterableIterator<TSource & TNext> {
     const iterator = this.getIterator();
-    while (iterator.moveNext()) {
-      yield iterator.current as TNext & TSource;
-    }
+    return {
+      next: (() => iterator.moveNext() ? 
+        { value: iterator.current, done: false  }
+      : { value: undefined, done: true }
+    
+    ) as () => IteratorResult<TSource & TNext>,
+      [Symbol.iterator]: () => iterator[Symbol.iterator](),
+    };
   }
   constructor(protected source: IEnumerable<TSource>) {
     super(source as IEnumerable<TSource & TNext>);
   }
-  private _current: TNext | undefined;
-  protected get current(): TNext {
-    if (this._current === undefined || this._current === null)
-      throw Exception.invalidOperation("Current value is not set");
-    return this._current;
-  }
-  protected set current(value: TNext) {
-    this._current = value;
-  }
+  protected current!: TNext;
   protected abstract clone(): IteratorBase<TSource, TNext>;
   private getIterator(): typeof this {
     if (this.state === 0) {
@@ -365,25 +344,11 @@ export class WhereIterator<TSource> extends IteratorBase<TSource> {
   }
 
   public override where(predicate: (x: TSource) => boolean): IEnumerable<TSource> {
-    return new WhereIterator(this.source, WhereIterator.combinePredicates(this._predicate, predicate));
+    return new WhereIterator(this.source, Utils.combinePredicates(this._predicate, predicate));
   }
 
   public override select<TOut>(selector: (x: TSource, i: number) => TOut): IEnumerable<TOut> {
     return new WhereSelectIterator(this.source, this._predicate, selector);
-  }
-
-  private static combinePredicates<TSource>(
-    predicate1: (item: TSource) => boolean,
-    predicate2: (item: TSource) => boolean,
-  ): (item: TSource) => boolean {
-    return (item) => predicate1(item) && predicate2(item);
-  }
-
-  private static combineSelectors<TSource, TMiddle, TResult>(
-    selector1: (item: TSource) => TMiddle,
-    selector2: (item: TMiddle) => TResult,
-  ): (item: TSource) => TResult {
-    return (item) => selector2(selector1(item)) as TResult;
   }
 }
 
@@ -735,10 +700,6 @@ export class List<T> extends Enumerable<T> implements IList<T> {
     this.source[index] = value;
   }
 
-  *[Symbol.iterator](): IterableIterator<T> {
-    yield* this.source;
-  }
-
   public static from<T>(source: T[] | IEnumerable<T>): IList<T> {
     if (source instanceof List) return source;
     return new List<T>(Array.isArray(source) ? source : [...source]);
@@ -1077,7 +1038,7 @@ export class Dictionary<TK, TV, TPrev = TV>
 
   public add({ key, value }: KeyValuePair<TK, TV>): boolean {
     if (this.map.has(key)) {
-      throw new Error(`Key ${LinqUtils.ensureString(key)} already exists in dictionary`);
+      throw new Error(`Key ${Utils.ensureString(key)} already exists in dictionary`);
     }
     this.map.set(key, value);
     return true;
@@ -1125,17 +1086,8 @@ export class Dictionary<TK, TV, TPrev = TV>
 
   toString() {
     const entries = Array.from(this.map.entries())
-      .map(([key, value]) => `${LinqUtils.ensureString(key)} => ${LinqUtils.ensureString(value)}`)
+      .map(([key, value]) => `${Utils.ensureString(key)} => ${Utils.ensureString(value)}`)
       .join(", ");
     return `Dictionary(${this.map.size}): {${entries}}`;
   }
-}
-
-export function cast<T>(source: any): T {
-  return source as T;
-}
-
-function validateSource<T>(source: Iterable<T>): void {
-  if (!source) throw Exception.argumentNull("source");
-  if (typeof source !== "string" && !source[Symbol.iterator]) throw Exception.argument("Source must be iterable");
 }

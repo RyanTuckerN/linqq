@@ -12,7 +12,7 @@ import { IGrouping, IEqualityComparer, IDictionary, IOrderedEnumerable, Indexabl
 import { HashSet } from "../enumerables";
 import { IList } from "./IList";
 
-export interface IEnumerable<T> extends Iterable<T>, IterableIterator<T> {
+export interface IEnumerable<T> extends Iterable<T> {
   // Transformation
   toArray(): T[];
   toList(): IList<T>;

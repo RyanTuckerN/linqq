@@ -25,19 +25,18 @@ import { Operation } from "../iterators/operation";
 import { Exception } from "../validator/exception";
 import { Utils } from "../util";
 
-let i = 1;
-let logIteration: ((name: string, ...args: any[]) => void) | undefined;
-// logIteration = (name, ...args) => {
-//   console.log(name, i++, ...args);
-// };
-
-export abstract class EnumerableBase<T extends any> implements IEnumerable<T> {
-  constructor(source: Iterable<T>) {
-    if (!source) throw Exception.argumentNull("source");
-    if (typeof source !== "string" && !source[Symbol.iterator]) throw Exception.argument("Source must be iterable");
+export class Enumerable<T> implements IEnumerable<T> {
+  public static from<T>(source: Iterable<T>): IEnumerable<T> {
+    if (typeof source === "string" || Array.isArray(source)) return new List<T>(source);
+    if (source instanceof Enumerable) return source;
+    return new Enumerable<T>(source);
   }
 
-  abstract [Symbol.iterator](): IterableIterator<T>;
+  protected constructor(protected source: Iterable<T>) {}
+
+  *[Symbol.iterator](): IterableIterator<T> {
+    yield* this.source;
+  }
 
   ensureList(): IList<T> {
     if (this instanceof List) return this;
@@ -45,31 +44,45 @@ export abstract class EnumerableBase<T extends any> implements IEnumerable<T> {
   }
 
   toList(): IList<T> {
-    return List.from([...this]);
+    return List.from(this);
   }
 
   toArray(): T[] {
     return [...this];
   }
 
-  toSet(comparer?: IEqualityComparer<T> | undefined): HashSet<T> {
+  toHashSet(comparer?: IEqualityComparer<T>): HashSet<T> {
     return new HashSet(this, comparer);
+  }
+
+  toSet(): Set<T> {
+    return new Set(this);
   }
 
   cast<TOut>(): IEnumerable<TOut> {
     return Utils.cast<IEnumerable<TOut>>(this);
   }
 
-  where(predicate: (x: T) => boolean): IEnumerable<T> {
-    return new WhereIterator(this, predicate);
+  where(predicate: Predicate<T> | PredicateWithIndex<T>): IEnumerable<T> {
+    if (!predicate) throw Exception.argumentNull("predicate");
+    if (predicate.length > 1) return new Enumerable<T>(Generator.where(this, predicate));
+    let iterable: IEnumerable<T> | any;
+    if (Array.isArray(this.source)) {
+      iterable = new WhereArrayIterator(this.source, predicate as Predicate<T>);
+    } else if (this instanceof List) {
+      iterable = new WhereArrayIterator(this.toArray(), predicate as Predicate<T>);
+    } else {
+      iterable = new WhereIterator(this, predicate as Predicate<T>);
+    }
+    return Utils.cast<IEnumerable<T>>(iterable);
   }
 
   select<TOut>(selector: (x: T, i: number) => TOut): IEnumerable<TOut> {
-    return new WhereSelectIterator(this, () => true, selector);
+    return Utils.cast<IEnumerable<TOut>>(new WhereSelectIterator(this, undefined, selector));
   }
 
   selectMany<TOut>(selector: SelectorWithIndex<T, Iterable<TOut>>): IEnumerable<TOut> {
-    return new SelectManyIterator<T, TOut>(this, selector) as IEnumerable<TOut>;
+    return Utils.cast<IEnumerable<TOut>>(new SelectManyIterator<T, TOut>(this, selector));
   }
 
   aggregate<TAccumulate, TResult = TAccumulate>(
@@ -232,9 +245,7 @@ export abstract class EnumerableBase<T extends any> implements IEnumerable<T> {
     elementSelector?: Selector<T, TNext>,
     comparer?: IEqualityComparer<TKey>,
   ): IEnumerable<IGrouping<TKey, T>> {
-    return Utils.cast<IEnumerable<IGrouping<TKey, T>>>(
-      Enumerable.from(Generator.groupBy(this, keySelector, elementSelector, comparer)),
-    );
+    return new GroupingIterator(this, keySelector, elementSelector, comparer) as IEnumerable<IGrouping<TKey, T>>;
   }
 
   orderBy(selector: OrderSelector<T>): IOrderedEnumerable<T> {
@@ -243,23 +254,6 @@ export abstract class EnumerableBase<T extends any> implements IEnumerable<T> {
 
   orderByDescending(selector: OrderSelector<T>): IOrderedEnumerable<T> {
     return OrderedEnumerable.createOrderedEnumerable(this, [{ selector, descending: true }]);
-  }
-}
-
-export class Enumerable<T> extends EnumerableBase<T> implements IEnumerable<T> {
-  public static from<T>(source: Iterable<T>): IEnumerable<T> {
-    if (source instanceof Enumerable) return source;
-    if (Array.isArray(source)) return new List<T>(source);
-    if (typeof source === "string") return new List<T>(source);
-    return new Enumerable<T>(source);
-  }
-
-  protected constructor(protected source: Iterable<T>) {
-    super(source);
-  }
-
-  *[Symbol.iterator](): IterableIterator<T> {
-    yield* this.source;
   }
 
   public static empty<T>(): IEnumerable<T> {
@@ -277,24 +271,41 @@ export class Enumerable<T> extends EnumerableBase<T> implements IEnumerable<T> {
     if (count < 0) return Enumerable.empty<number>();
     return Enumerable.from<number>(Generator.range(start, count));
   }
+
+  public static generateFrom<TState, TOut>(
+    getInitialState: () => TState,
+    predicate: Predicate<TState>,
+    action: (state: TState) => TState,
+    selector: Selector<TState, TOut>,
+  ): IEnumerable<TOut> {
+    return Enumerable.from<TOut>(
+      Generator.generateFrom({
+        initial: getInitialState(),
+        predicate,
+        selector,
+        action,
+      }),
+    );
+  }
 }
 
-abstract class IteratorBase<TSource, TNext extends any = TSource> extends EnumerableBase<TNext & TSource> {
+abstract class IteratorBase<TSource, TNext extends any = TSource> extends Enumerable<TSource> {
   protected sourceIterator = this.source[Symbol.iterator]();
   protected state = 0; // 0 = before iteration, 1 = after iteration
   public [Symbol.iterator](): IterableIterator<TSource & TNext> {
-    const iterator = this.getIterator();
-    return {
-      next: (() => iterator.moveNext() ? 
-        { value: iterator.current, done: false  }
-      : { value: undefined, done: true }
-    
-    ) as () => IteratorResult<TSource & TNext>,
-      [Symbol.iterator]: () => iterator[Symbol.iterator](),
-    };
+    return this.getIterator();
   }
-  constructor(protected source: IEnumerable<TSource>) {
-    super(source as IEnumerable<TSource & TNext>);
+  next(): IteratorResult<TSource & TNext> {
+    // prettier-ignore
+    return (
+      this.moveNext() 
+        ? { done: false, value: this.current } 
+        : { done: true, value: undefined }
+      ) as IteratorResult<TSource & TNext>;
+  }
+
+  constructor(protected source: Iterable<TSource>) {
+    super(source as Iterable<TSource & TNext>);
   }
   protected current!: TNext;
   protected abstract clone(): IteratorBase<TSource, TNext>;
@@ -309,18 +320,19 @@ abstract class IteratorBase<TSource, TNext extends any = TSource> extends Enumer
   }
 
   public abstract moveNext(): boolean;
+
+  private dispose(): void {
+    this.current = undefined as TSource & TNext;
+    this.state = 1;
+  }
 }
 
-export class WhereIterator<TSource> extends IteratorBase<TSource> {
+class WhereIterator<TSource> extends IteratorBase<TSource> {
   constructor(
     protected source: IEnumerable<TSource>,
-    private _predicate: (item: TSource) => boolean,
+    private _predicate: Predicate<TSource>,
   ) {
     super(source);
-  }
-
-  public get predicate(): (item: TSource) => boolean {
-    return this._predicate;
   }
 
   public moveNext(): boolean {
@@ -328,39 +340,143 @@ export class WhereIterator<TSource> extends IteratorBase<TSource> {
     while (!(result = this.sourceIterator.next()).done) {
       if (this._predicate(result.value)) {
         this.current = result.value;
-        logIteration?.("WhereIterator ");
         return true;
       }
     }
     return false;
   }
 
-  public static isWhereIterator<TSource>(source: any): source is WhereIterator<TSource> {
-    return source instanceof WhereIterator;
-  }
-
   public clone(): IteratorBase<TSource> {
     return new WhereIterator(this.source, this._predicate);
   }
 
-  public override where(predicate: (x: TSource) => boolean): IEnumerable<TSource> {
-    return new WhereIterator(this.source, Utils.combinePredicates(this._predicate, predicate));
+  public override where(predicate: Predicate<TSource> | PredicateWithIndex<TSource>): IEnumerable<TSource> {
+    if (predicate.length > 1) return super.where(predicate);
+    return new WhereIterator(this.source, Utils.combinePredicates(this._predicate, predicate as Predicate<TSource>));
   }
 
   public override select<TOut>(selector: (x: TSource, i: number) => TOut): IEnumerable<TOut> {
-    return new WhereSelectIterator(this.source, this._predicate, selector);
+    return Utils.cast<IEnumerable<TOut>>(new WhereSelectIterator(this.source, this._predicate, selector));
   }
 }
 
-abstract class IndexIterator<TSource, TNext = TSource> extends IteratorBase<TSource, TNext> {
-  protected index = 0;
+class WhereArrayIterator<TSource> extends IteratorBase<TSource> {
+  private index = 0;
+  constructor(
+    protected source: TSource[],
+    private _predicate: Predicate<TSource>,
+  ) {
+    super(source);
+  }
+
+  public get predicate(): Predicate<TSource> {
+    return this._predicate;
+  }
+
+  public moveNext(): boolean {
+    while (this.index < this.source.length) {
+      const item = this.source[this.index++];
+      if (this._predicate(item)) {
+        this.current = item;
+        return true;
+      }
+    }
+    return false;
+  }
+
+  public clone(): IteratorBase<TSource> {
+    return new WhereArrayIterator(this.source, this._predicate);
+  }
+
+  public override where(predicate: Predicate<TSource> | PredicateWithIndex<TSource>): IEnumerable<TSource> {
+    if (predicate.length > 1) return super.where(<PredicateWithIndex<TSource>>predicate);
+    return new WhereArrayIterator(this.source, Utils.combinePredicates(this._predicate, <Predicate<TSource>>predicate));
+  }
+
+  public override select<TOut>(selector: SelectorWithIndex<TSource, TOut>): IEnumerable<TOut> {
+    return Utils.cast<IEnumerable<TOut>>(new WhereSelectArrayIterator(this.source, this._predicate, selector));
+  }
 }
 
-export class SelectManyIterator<TSource, TResult> extends IndexIterator<TSource, TResult> {
+class WhereSelectIterator<TSource, TResult> extends IteratorBase<TSource, TResult> {
+  private index = 0;
+  constructor(
+    source: Iterable<TSource>,
+    private predicate: Predicate<TSource> | undefined | null,
+    private selector: SelectorWithIndex<TSource, TResult>,
+  ) {
+    super(source);
+  }
+
+  public moveNext(): boolean {
+    let result;
+    while (!(result = this.sourceIterator.next()).done) {
+      if (!this.predicate || this.predicate(result.value)) {
+        this.current = this.selector(result.value, this.index++);
+        return true;
+      }
+    }
+    return false;
+  }
+
+  public clone(): WhereSelectIterator<TSource, TResult> {
+    return new WhereSelectIterator<TSource, TResult>(this.source, this.predicate, this.selector);
+  }
+}
+
+class WhereSelectArrayIterator<TSource, TOut> extends IteratorBase<TSource, TOut> {
+  private index = 0;
+  constructor(
+    protected source: TSource[],
+    private _predicate: Predicate<TSource>,
+    private _selector: (item: TSource, index: number) => TOut,
+  ) {
+    super(source);
+  }
+
+  public get predicate(): Predicate<TSource> {
+    return this._predicate;
+  }
+
+  public moveNext(): boolean {
+    while (this.index < this.source.length) {
+      const item = this.source[this.index++];
+      if (this._predicate(item)) {
+        this.current = this._selector(item, this.index - 1);
+        return true;
+      }
+    }
+    return false;
+  }
+
+  public clone(): IteratorBase<TSource, TOut> {
+    return new WhereSelectArrayIterator(this.source, this._predicate, this._selector);
+  }
+
+  public override select<TNext>(selector: (x: TSource, i: number) => TNext): IEnumerable<TNext> {
+    if (this._selector.length === 1) {
+      return Utils.cast<IEnumerable<TNext>>(
+        new WhereSelectArrayIterator(
+          this.source,
+          this._predicate,
+          Utils.combineSelectors(this._selector as any, selector as any),
+        ),
+      );
+    }
+    return super.select(selector);
+  }
+
+  public override where(predicate: (x: TSource) => boolean): IEnumerable<TSource> {
+    return new WhereIterator(Utils.cast(this), predicate);
+  }
+}
+
+class SelectManyIterator<TSource, TResult> extends IteratorBase<TSource, TResult> {
+  private index = 0;
   private innerIterator: Iterator<TResult> | null = null;
 
   constructor(
-    source: IEnumerable<TSource>,
+    source: Iterable<TSource>,
     private selector: SelectorWithIndex<TSource, Iterable<TResult>>,
   ) {
     super(source);
@@ -370,7 +486,6 @@ export class SelectManyIterator<TSource, TResult> extends IndexIterator<TSource,
     while (true) {
       if (this.innerIterator) {
         const result = this.innerIterator.next();
-        logIteration?.("SelectManyIterator ");
         if (!result.done) {
           this.current = result.value;
           return true;
@@ -389,42 +504,17 @@ export class SelectManyIterator<TSource, TResult> extends IndexIterator<TSource,
   }
 }
 
-export class WhereSelectIterator<TSource, TResult> extends IndexIterator<TSource, TResult> {
-  constructor(
-    source: IEnumerable<TSource>,
-    private predicate: Predicate<TSource> | undefined | null,
-    private selector: SelectorWithIndex<TSource, TResult>,
-  ) {
-    super(source);
-  }
-
-  public moveNext(): boolean {
-    let result;
-    while (!(result = this.sourceIterator.next()).done) {
-      logIteration?.("WhereSelectIterator ");
-      if (!this.predicate || this.predicate(result.value)) {
-        this.current = this.selector(result.value, this.index++);
-        return true;
-      }
-    }
-    return false;
-  }
-
-  public clone(): WhereSelectIterator<TSource, TResult> {
-    return new WhereSelectIterator<TSource, TResult>(this.source, this.predicate, this.selector);
-  }
-}
-
-export class OrderedEnumerable<T> extends IndexIterator<T> implements IOrderedEnumerable<T> {
+class OrderedEnumerable<T> extends IteratorBase<T> implements IOrderedEnumerable<T> {
+  private index = 0;
   private sorted: T[] | null = null;
   public static createOrderedEnumerable<T>(
-    source: IEnumerable<T>,
+    source: Iterable<T>,
     sortExpressions: Sorter<T>[] = [],
   ): IOrderedEnumerable<T> {
     return new OrderedEnumerable<T>(source, sortExpressions);
   }
   constructor(
-    source: IEnumerable<T>,
+    source: Iterable<T>,
     private criteria: Sorter<T>[],
   ) {
     super(source);
@@ -464,7 +554,6 @@ export class OrderedEnumerable<T> extends IndexIterator<T> implements IOrderedEn
         const keyB = criterion.selector(b);
         const comparison = keyA < keyB ? -1 : keyA > keyB ? 1 : 0;
         if (comparison !== 0) {
-          logIteration?.(`OrderedEnumerable sort(), comparison: ${comparison}`);
           return criterion.descending ? -comparison : comparison;
         }
       }
@@ -478,11 +567,9 @@ export class OrderedEnumerable<T> extends IndexIterator<T> implements IOrderedEn
     //   if (arr.length > 1) {
     //     index = partition(arr, left, right);
     //     if (left < index - 1) {
-    //       logIteration?.(`quickSort left partition, size: ${index - 1 - left + 1}`);
     //       quickSort(arr, left, index - 1);
     //     }
     //     if (index < right) {
-    //       logIteration?.(`quickSort right partition, size: ${right - index + 1}`);
     //       quickSort(arr, index, right);
     //     }
     //   }
@@ -494,15 +581,12 @@ export class OrderedEnumerable<T> extends IndexIterator<T> implements IOrderedEn
     //   let j = right;
     //   while (i <= j) {
     //     while (compare(arr[i], pivot) < 0) {
-    //       logIteration?.(`partition left pointer move, index: ${i}`);
     //       i++;
     //     }
     //     while (compare(arr[j], pivot) > 0) {
-    //       logIteration?.(`partition right pointer move, index: ${j}`);
     //       j--;
     //     }
     //     if (i <= j) {
-    //       logIteration?.(`partition swap, indices: ${i}, ${j}`);
     //       [arr[i], arr[j]] = [arr[j], arr[i]];
     //       i++;
     //       j--;
@@ -529,11 +613,11 @@ export class OrderedEnumerable<T> extends IndexIterator<T> implements IOrderedEn
   }
 }
 
-export class JoinIterator<TOuter, TInner, TKey, TResult> extends IteratorBase<TOuter, TResult> {
+class JoinIterator<TOuter, TInner, TKey, TResult> extends IteratorBase<TOuter, TResult> {
   private lookup: Lookup<TKey, TInner> | null = null;
 
   constructor(
-    source: IEnumerable<TOuter>,
+    source: Iterable<TOuter>,
     private inner: IEnumerable<TInner>,
     private outerKeySelector: Selector<TOuter, TKey>,
     private innerKeySelector: Selector<TInner, TKey>,
@@ -546,12 +630,10 @@ export class JoinIterator<TOuter, TInner, TKey, TResult> extends IteratorBase<TO
     this.lookup ??= Lookup.create(this.inner, this.innerKeySelector, (x) => x, this.comparer);
     let result;
     while (!(result = this.sourceIterator.next()).done) {
-      logIteration?.("JoinIterator ");
       const key = this.outerKeySelector(result.value);
       const inners = this.lookup.getGrouping(key, false);
       if (inners) {
         for (const innerItem of inners) {
-          logIteration?.("JoinIterator inner");
           this.current = this.resultSelector(result.value, innerItem);
           return true;
         }
@@ -565,11 +647,11 @@ export class JoinIterator<TOuter, TInner, TKey, TResult> extends IteratorBase<TO
   }
 }
 
-export class GroupJoinIterator<TOuter, TInner, TKey, TResult> extends IteratorBase<TOuter, TResult> {
+class GroupJoinIterator<TOuter, TInner, TKey, TResult> extends IteratorBase<TOuter, TResult> {
   private lookup: Lookup<TKey, TInner> | null = null;
 
   constructor(
-    source: IEnumerable<TOuter>,
+    source: Iterable<TOuter>,
     private inner: IEnumerable<TInner>,
     private outerKeySelector: Selector<TOuter, TKey>,
     private innerKeySelector: Selector<TInner, TKey>,
@@ -583,10 +665,10 @@ export class GroupJoinIterator<TOuter, TInner, TKey, TResult> extends IteratorBa
     this.lookup ??= Lookup.create(this.inner, this.innerKeySelector, (x) => x, this.comparer);
     let result;
     while (!(result = this.sourceIterator.next()).done) {
-      const key = this.outerKeySelector(result.value);
-      const inner = Enumerable.from(this.lookup.getGrouping(key, false) ?? []);
-      this.current = this.resultSelector(result.value, inner);
-      logIteration?.("GroupJoinIterator ");
+      this.current = this.resultSelector(
+        result.value,
+        Enumerable.from(this.lookup.getGrouping(this.outerKeySelector(result.value), false) ?? []),
+      );
       return true;
     }
     return false;
@@ -603,7 +685,7 @@ export class GroupJoinIterator<TOuter, TInner, TKey, TResult> extends IteratorBa
   }
 }
 
-export class Grouping<TKey, TValue> extends EnumerableBase<TValue> implements IGrouping<TKey, TValue> {
+export class Grouping<TKey, TValue> extends Enumerable<TValue> implements IGrouping<TKey, TValue> {
   public static createGrouping<TKey, TValue>(source: Iterable<TValue>, key: TKey): IGrouping<TKey, TValue> {
     return new Grouping<TKey, TValue>(source, key);
   }
@@ -612,9 +694,7 @@ export class Grouping<TKey, TValue> extends EnumerableBase<TValue> implements IG
     protected source: Iterable<TValue>,
     public readonly key: TKey,
   ) {
-    if (key === undefined || key === null) {
-      throw new Error("Grouping key cannot be undefined");
-    }
+    if (key === undefined || key === null) throw Exception.argumentNull("key");
     super(source);
     this.key = key;
   }
@@ -622,24 +702,13 @@ export class Grouping<TKey, TValue> extends EnumerableBase<TValue> implements IG
   toString(): string {
     return `Grouping: ${this.key}, ${super.toString()}`;
   }
-
-  next: (...args: [] | [undefined]) => IteratorResult<TValue> = () => {
-    throw new Error("Method not implemented.");
-  };
-
-  *[Symbol.iterator](): IterableIterator<TValue> {
-    for (const item of this.source) {
-      logIteration?.("Grouping ");
-      yield item;
-    }
-  }
 }
 
-export class GroupingIterator<TKey, TSource, TNext = TSource> extends IteratorBase<TSource, IGrouping<TKey, TNext>> {
+class GroupingIterator<TKey, TSource, TNext = TSource> extends IteratorBase<TSource, IGrouping<TKey, TNext>> {
   private lookup?: Lookup<TKey, TSource>;
   private lookupIterator?: Iterator<KeyedArray<TKey, TSource>>;
   constructor(
-    source: IEnumerable<TSource>,
+    source: Iterable<TSource>,
     private keySelector: Selector<TSource, TKey>,
     private elementSelector?: Selector<TSource, TNext>,
     private comparer: IEqualityComparer<TKey> = new UniversalEqualityComparer<TKey>(),
@@ -653,7 +722,6 @@ export class GroupingIterator<TKey, TSource, TNext = TSource> extends IteratorBa
 
     let result;
     while (!(result = this.lookupIterator.next()).done) {
-      logIteration?.("GroupingIterator ");
       const key = result.value.key;
       const grouping = result.value;
       this.current = Grouping.createGrouping<TKey, TNext>(
@@ -692,6 +760,10 @@ export class List<T> extends Enumerable<T> implements IList<T> {
 
   [index: number]: T;
 
+  private throwIfEmpty(): void {
+    if (this.isEmpty()) throw Exception.sequenceEmpty();
+  }
+
   get(index: number): T {
     return this.source[index];
   }
@@ -702,7 +774,12 @@ export class List<T> extends Enumerable<T> implements IList<T> {
 
   public static from<T>(source: T[] | IEnumerable<T>): IList<T> {
     if (source instanceof List) return source;
-    return new List<T>(Array.isArray(source) ? source : [...source]);
+    let newSource = source;
+    if (!Array.isArray(source)) {
+      newSource = Array.from(source);
+    }
+
+    return new List<T>(newSource as T[]);
   }
 
   public static range(start: number, count: number): IList<number> {
@@ -712,11 +789,11 @@ export class List<T> extends Enumerable<T> implements IList<T> {
   public static repeat<T>(element: T, count: number): IList<T> {
     return List.from(Enumerable.repeat(element, count));
   }
-
+  
   public static empty<T>(): IList<T> {
-    return List.from(Enumerable.empty<T>());
+    return List.from<T>([]);
   }
-
+  
   public get length(): number {
     return this.source.length;
   }
@@ -754,37 +831,14 @@ export class List<T> extends Enumerable<T> implements IList<T> {
 
   public override sum(selector?: NumericSelector<T> | undefined): number;
   public override sum(selector: NumericSelector<T>): number {
-    this.throwIfEmpty();
     selector ??= (x) => x as number;
     return this.source.reduce((acc, x) => acc + selector(x), 0);
-  }
-
-  private throwIfEmpty(): void {
-    if (this.isEmpty()) throw Exception.sequenceEmpty();
   }
 
   public override average(selector?: NumericSelector<T> | undefined): number;
   public override average(selector: NumericSelector<T>): number {
     this.throwIfEmpty();
     return this.sum(selector) / this.length;
-  }
-
-  public override max<TOut extends Comparable>(selector?: Selector<T, TOut> | undefined): TOut {
-    this.throwIfEmpty();
-    if (this.source[0] instanceof Date) {
-      selector ??= (x) => x as any;
-      return this.source.reduce((acc, x) => (selector!(x) > acc ? selector!(x) : acc), selector(this.source[0]));
-    }
-    return (selector ? Math.max(...(this.source.map(selector) as any[])) : Math.max(...(this.source as any[]))) as TOut;
-  }
-
-  public override min<TOut extends Comparable>(selector?: Selector<T, TOut> | undefined): TOut {
-    this.throwIfEmpty();
-    if (this.source[0] instanceof Date) {
-      selector ??= (x) => x as any;
-      return this.source.reduce((acc, x) => (selector!(x) < acc ? selector!(x) : acc), selector(this.source[0]));
-    }
-    return (selector ? Math.min(...(this.source.map(selector) as any[])) : Math.min(...(this.source as any[]))) as TOut;
   }
 
   public override aggregate<TAccumulate, TResult = TAccumulate>(
@@ -853,6 +907,10 @@ export class List<T> extends Enumerable<T> implements IList<T> {
   public override toArray(): T[] {
     return this.source;
   }
+
+  [Symbol.iterator](): IterableIterator<T> {
+    return this.source[Symbol.iterator]();
+  }
 }
 
 export class Lookup<TKey, T> implements Iterable<KeyedArray<TKey, T>> {
@@ -878,14 +936,13 @@ export class Lookup<TKey, T> implements Iterable<KeyedArray<TKey, T>> {
   }
 
   public static create<TKey, TValue, TNext>(
-    source: IEnumerable<TValue>,
+    source: Iterable<TValue>,
     keySelector: Selector<TValue, TKey>,
     elementSelector: Selector<TValue, TNext>,
     comparer?: IEqualityComparer<TKey>,
   ): Lookup<TKey, TNext> {
     const lookup = new Lookup<TKey, TNext>(comparer);
     for (const item of source) {
-      logIteration?.("Lookup create ");
       const key = keySelector(item);
       lookup.getGrouping(key, true).push(elementSelector(item));
     }
@@ -899,15 +956,16 @@ class KeyedArray<TKey, T> extends Array<T> {
   }
 }
 
-export class HashSet<T> implements IHashSet<T> {
+export class HashSet<T> extends Enumerable<T> implements IHashSet<T> {
   private map: HashMap<T>;
   private comparer: IEqualityComparer<T>;
   constructor(source: Iterable<T> = [], equalityComparer?: IEqualityComparer<T>) {
-    const comparer = equalityComparer || new UniversalEqualityComparer<T>();
+    const comparer = equalityComparer ?? new UniversalEqualityComparer<T>();
     const map = new HashMap<T>();
     for (const item of source) {
       map.set(comparer.hash(item), item);
     }
+    super(map.values());
     this.map = map;
     this.comparer = comparer;
   }
@@ -917,14 +975,18 @@ export class HashSet<T> implements IHashSet<T> {
   toList(): IList<T> {
     return List.from(this.toArray());
   }
-  *[Symbol.iterator](): IterableIterator<T> {
-    yield* this.map.values();
+  [Symbol.iterator](): IterableIterator<T> {
+    return this.map.values();
   }
+
   [Symbol.toStringTag]: "HashSet" = "HashSet";
+
   forEach(callbackfn: (value: T, value2: T, set: Set<T>) => void, thisArg?: any): void {
     this.map.forEach((x) => callbackfn(x, x, this), thisArg);
   }
+
   keys = this.values;
+
   entries(): IterableIterator<[T, T]> {
     return this.map.getSetEntries();
   }
@@ -935,6 +997,11 @@ export class HashSet<T> implements IHashSet<T> {
 
   get size(): number {
     return this.map.size;
+  }
+
+  public override count(predicate?: Predicate<T>): number {
+    if (!predicate) return this.size;
+    return super.count(predicate);
   }
 
   add(value: T): this {
@@ -957,24 +1024,22 @@ export class HashSet<T> implements IHashSet<T> {
   toString(): string {
     return `HashSet(${this.size}): ${[...this.map.values()].join(", ")}`;
   }
+
   toMap(): Map<string, T> {
     return this.map;
-  }
-
-  next(): IteratorResult<T> {
-    return this.map.values().next();
   }
 }
 
 class HashMap<T> extends Map<string, T> {
-  public getSetEntries(): IterableIterator<[T, T]> {
-    return [...this.entries()].map(([_, value]) => [value, value] as [T, T])[Symbol.iterator]();
+  public *getSetEntries(): IterableIterator<[T, T]> {
+    for (const value of this.values()) {
+      yield [value, value];
+    }
   }
 }
-export class Dictionary<TK, TV, TPrev = TV>
-  extends EnumerableBase<KeyValuePair<TK, TV>>
-  implements IDictionary<TK, TV>
-{
+
+// @ts-ignore - we apply the transformation upon construction as well as in the iterator
+export class Dictionary<TK, TV, TPrev = TV> extends Enumerable<KeyValuePair<TK, TV>> implements IDictionary<TK, TV> {
   private map: Map<TK, TV>;
   constructor(
     protected source: Iterable<TPrev>,
@@ -984,9 +1049,7 @@ export class Dictionary<TK, TV, TPrev = TV>
     const map = new Map<TK, TV>();
     let index = 0;
     for (const item of source) {
-      const key = keySelector(item, index);
-      const value = valueSelector ? valueSelector(item, index) : (item as TV & TPrev);
-      map.set(key, value);
+      map.set(keySelector(item, index), valueSelector ? valueSelector(item, index) : (item as TV & TPrev));
       index++;
     }
     super(Dictionary.fromMap(map));
@@ -1019,9 +1082,7 @@ export class Dictionary<TK, TV, TPrev = TV>
   }
 
   public *[Symbol.iterator](): IterableIterator<KeyValuePair<TK, TV>> {
-    for (const [key, value] of this.map.entries()) {
-      yield { key, value };
-    }
+    yield* Dictionary.fromMap(this.map);
   }
 
   public get keys(): Iterable<TK> {
@@ -1090,4 +1151,8 @@ export class Dictionary<TK, TV, TPrev = TV>
       .join(", ");
     return `Dictionary(${this.map.size}): {${entries}}`;
   }
+}
+
+function isPredicateWithIndex<T>(predicate: any): predicate is PredicateWithIndex<T> {
+  return typeof predicate === "function" && predicate.length === 2;
 }

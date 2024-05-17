@@ -42,7 +42,7 @@ export class ObjectReferenceEqualityComparer<T extends object> implements IEqual
 
 export class IdEqualityComparer<TId extends Primitive, T extends { id: TId }> implements IEqualityComparer<T> {
   hash(item: T): string {
-    return `hash_${String(item.id)}`;
+    return `${String(item.id)}`;
   }
 
   equals(a: T, b: T): boolean {

@@ -1,5 +1,5 @@
 import { IEnumerable, IList } from "./interfaces";
-import { Enumerable } from "./enumerables";
+import { Enumerable, List } from "./enumerables";
 export * from "./enumerables";
 export * from "./types";
 export * from "./interfaces";
@@ -17,5 +17,6 @@ linq.range = Enumerable.range;
 linq.repeat = Enumerable.repeat;
 linq.empty = Enumerable.empty;
 linq.from = Enumerable.from;
+linq.generate = Enumerable.generateFrom;
 
 export default linq;

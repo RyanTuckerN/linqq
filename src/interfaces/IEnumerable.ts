@@ -17,7 +17,8 @@ export interface IEnumerable<T> extends Iterable<T> {
   toArray(): T[];
   toList(): IList<T>;
   ensureList(): IList<T>;
-  toSet(comparer?: IEqualityComparer<T>): HashSet<T>;
+  toSet(): Set<T>;
+  toHashSet(comparer?: IEqualityComparer<T>): HashSet<T>;
   toDictionary<TKey, TOut = T>(
     keySelector: Selector<T, TKey>,
     valueSelector?: Selector<T, TOut>,
@@ -28,7 +29,7 @@ export interface IEnumerable<T> extends Iterable<T> {
   aggregate<TAccumulate, TResult>(
     seed: TAccumulate,
     func: (acc: TAccumulate, x: T) => TAccumulate,
-    resultSelector: (acc: TAccumulate) => TResult,
+    resultSelector?: (acc: TAccumulate) => TResult,
   ): TResult;
   count(predicate?: Predicate<T>): number;
   sum(selector?: NumericSelector<T>): Numeric;
@@ -56,7 +57,7 @@ export interface IEnumerable<T> extends Iterable<T> {
   reverse(): IEnumerable<T>;
 
   // Query
-  where(predicate: Predicate<T>): IEnumerable<T>;
+  where(predicate: PredicateWithIndex<T>): IEnumerable<T>;
   select<TOut>(selector: SelectorWithIndex<T, TOut>): IEnumerable<TOut>;
   selectMany<TOut>(selector: SelectorWithIndex<T, Iterable<TOut>>): IEnumerable<TOut>;
   join<TInner, TKey, TOut>(

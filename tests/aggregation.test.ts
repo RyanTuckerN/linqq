@@ -1,11 +1,13 @@
 import linq from "../src";
 
 test(" *** Aggregation/Reduction ***", () => {
+  expect(emptyLinqArray).toHaveProperty("aggregate");
   expect(emptyLinqArray).toHaveProperty("count");
   expect(emptyLinqArray).toHaveProperty("sum");
   expect(emptyLinqArray).toHaveProperty("average");
   expect(emptyLinqArray).toHaveProperty("max");
   expect(emptyLinqArray).toHaveProperty("min");
+  expect(emptyLinqArray.aggregate).toBeInstanceOf(Function);
   expect(emptyLinqArray.count).toBeInstanceOf(Function);
   expect(emptyLinqArray.sum).toBeInstanceOf(Function);
   expect(emptyLinqArray.average).toBeInstanceOf(Function);
@@ -84,6 +86,18 @@ test("min() - objects", () => {
 
 test("min() - dates", () => {
   expect(linq(datesArray).min()).toEqual(new Date("2021-01-01"));
+});
+
+test("aggregate() - numbers", () => {
+  expect(
+    linq(numsArray).aggregate(
+      0,
+      (sum, n) => sum + n,
+      (x) => x,
+    ),
+  ).toBe(15);
+
+  expect(linq(numsArray).aggregate(0, (sum, n) => sum + n)).toBe(15);
 });
 
 const emptyLinqArray = linq([]);

@@ -202,14 +202,151 @@ test("except(), - equality comparer", () => {
 });
 
 test("primitive data uniqueness (UniversalEqualityComparer)", () => {
-  const arr = [1, 2, 3, 4, 5, 1, 2, 3, 4, 5, "1" , "2", "3", "4", "5"];
+  const arr = [1, 2, 3, 4, 5, 1, 2, 3, 4, 5, "1", "2", "3", "4", "5"];
   const distinct = linq(arr).distinct().toArray();
   expect(distinct).toEqual([1, 2, 3, 4, 5, "1", "2", "3", "4", "5"]);
-})
-
+});
 
 test("toSet()", () => {
   const arr = [1, 2, 3, 4, 5, 1, 2, 3, 4, 5];
-  const set = linq(arr).toSet().toArray();
+  const set = linq(arr).toHashSet().toArray();
   expect(set).toEqual([1, 2, 3, 4, 5]);
-})
+});
+
+// set methods
+test("toMap()", () => {
+  const arr = [1, 2, 3, 4, 5];
+  const map = linq(arr)
+    .toHashSet({
+      hash: (a) => `${a}`,
+      equals: (a, b) => a == b,
+    })
+    .toMap();
+  expect(map).toBeInstanceOf(Map);
+  expect(map.size).toBe(5);
+  expect(map.get("1")).toBe(1);
+  expect(map.get("2")).toBe(2);
+  expect(map.get("3")).toBe(3);
+  expect(map.get("4")).toBe(4);
+  expect(map.get("5")).toBe(5);
+});
+
+test("toMap() - equality comparer", () => {
+  const arr = [
+    { id: 1, name: "Alice" },
+    { id: 2, name: "Bob" },
+  ];
+  const map = linq(arr)
+    .toHashSet(new IdEqualityComparer())
+    .toMap();
+  expect(map).toBeInstanceOf(Map);
+  expect(map.size).toBe(2);
+  expect(map.get("1")).toEqual({ id: 1, name: "Alice" });
+  expect(map.get("2")).toEqual({ id: 2, name: "Bob" });
+});
+
+test("toMap() - reference equality", () => {
+  const arr = [
+    { id: 1, name: "Alice" },
+    { id: 2, name: "Bob" },
+  ];
+  const map = linq(arr)
+    .toHashSet(new ObjectReferenceEqualityComparer())
+    .toMap();
+  expect(map).toBeInstanceOf(Map);
+  expect(map.size).toBe(2);
+  expect(map.get("hash_1")).toEqual({ id: 1, name: "Alice" });
+  expect(map.get("hash_2")).toEqual({ id: 2, name: "Bob" });
+});
+
+test("add()", () => {
+  const set = linq([1, 2, 3]).toHashSet();
+  set.add(4);
+  expect(set.has(4)).toBe(true);
+  expect(set.size).toBe(4);
+});
+
+test("add() - reference equality", () => {
+  const set = linq([obj1, obj2]).toHashSet();
+  set.add(obj3);
+  expect(set.has(obj3)).toBe(true);
+  expect(set.size).toBe(3);
+  set.add(obj3);
+  expect(set.size).toBe(3);
+});
+
+test("add() - equality comparer", () => {
+  const set = linq([obj1, obj2]).toHashSet(new IdEqualityComparer());
+  set.add(obj3);
+  expect(set.has(obj3)).toBe(true);
+  expect(set.size).toBe(3);
+  set.add(obj3);
+  expect(set.size).toBe(3);
+});
+
+test("clear()", () => {
+  const set = linq([1, 2, 3]).toHashSet();
+  set.clear();
+  expect(set.size).toBe(0);
+});
+
+test("delete()", () => {
+  const set = linq([1, 2, 3]).toHashSet();
+  set.delete(2);
+  expect(set.has(2)).toBe(false);
+  expect(set.size).toBe(2);
+});
+
+test("delete() - reference equality", () => {
+  const set = linq([obj1, obj2, obj3]).toHashSet();
+  set.delete(obj2);
+  expect(set.has(obj2)).toBe(false);
+  expect(set.size).toBe(2);
+});
+
+test("delete() - equality comparer", () => {
+  const set = linq([obj1, obj2, obj3]).toHashSet(new IdEqualityComparer());
+  set.delete(obj2);
+  expect(set.has(obj2)).toBe(false);
+  expect(set.size).toBe(2);
+});
+
+test("forEach()", () => {
+  const set = linq([1, 2, 3]).toHashSet();
+  const arr: number[] = [];
+  set.forEach((x) => arr.push(x));
+  expect(arr).toEqual([1, 2, 3]);
+});
+
+test("has()", () => {
+  const set = linq([1, 2, 3]).toHashSet();
+  expect(set.has(2)).toBe(true);
+  expect(set.has(4)).toBe(false);
+});
+
+test("keys()", () => {
+  const set = linq([1, 2, 3]).toHashSet();
+  const keys = Array.from(set.keys());
+  expect(keys).toEqual([1, 2, 3]);
+});
+
+test("values()", () => {
+  const set = linq([1, 2, 3]).toHashSet();
+  const values = Array.from(set.values());
+  expect(values).toEqual([1, 2, 3]);
+});
+
+test("entries()", () => {
+  const set = linq([1, 2, 3]).toHashSet();
+  const entries = Array.from(set.entries());
+  expect(entries).toEqual([
+    [1, 1],
+    [2, 2],
+    [3, 3],
+  ]);
+});
+
+test("size", () => {
+  const set = linq([1, 2, 3]).toHashSet();
+  expect(set.size).toBe(3);
+});

@@ -1,9 +1,16 @@
 import { Grouping, HashSet, Lookup } from "../enumerables";
 import { IEqualityComparer, IEnumerable, IGrouping } from "../interfaces";
-import { PredicateWithIndex, Selector, Predicate } from "../types";
+import { PredicateWithIndex, Selector, Predicate, SelectorWithIndex } from "../types";
 import { Exception } from "../validator/exception";
 
 export class Generator {
+  public static *where<T>(source: Iterable<T>, predicate: PredicateWithIndex<T>): Iterable<T> {
+    let i = -1;
+    for (const item of source) {
+      if (predicate(item, ++i)) yield item;
+    }
+  }
+
   public static *range(start: number, count: number): Iterable<number> {
     while (count--) yield start++;
   }
@@ -63,8 +70,8 @@ export class Generator {
     yield* set.values();
   }
 
-  public static *union<T>(source: Iterable<T>, other: IEnumerable<T> | T[], comparer?: IEqualityComparer<T>) {
-    let set: Set<T> | undefined;
+  public static *union<T>(source: Iterable<T>, other: Iterable<T>, comparer?: IEqualityComparer<T>) {
+    let set: Set<T>;
     if (comparer) {
       set = new HashSet<T>([...source, ...other], comparer);
     } else {
@@ -75,10 +82,10 @@ export class Generator {
 
   public static *intersect<T>(
     source: Iterable<T>,
-    other: IEnumerable<T> | T[],
-    comparer: IEqualityComparer<T>,
+    other: Iterable<T>,
+    comparer?: IEqualityComparer<T>,
   ): Iterable<T> {
-    let set: Set<T> | undefined;
+    let set: Set<T>;
     if (comparer) {
       set = new HashSet<T>(other, comparer);
     } else {
@@ -90,10 +97,12 @@ export class Generator {
   }
   public static *except<T>(
     source: Iterable<T>,
-    other: IEnumerable<T> | T[],
-    comparer: IEqualityComparer<T>,
+    other: Iterable<T>,
+    comparer?: IEqualityComparer<T>,
   ): Iterable<T> {
-    let set: Set<T> | undefined;
+    if (!source) throw Exception.argumentNull("source");
+    if (!other) throw Exception.argumentNull("other");
+    let set: Set<T>;
     if (comparer) {
       set = new HashSet<T>(other, comparer);
     } else {
@@ -105,13 +114,10 @@ export class Generator {
   }
 
   public static *concat<T>(source: Iterable<T>, ...args: Iterable<T>[]): Iterable<T> {
-    for (const item of source) {
-      yield item;
-    }
+    if (!source) throw Exception.argumentNull("source");
+    yield* source;
     for (const arg of args) {
-      for (const item of arg) {
-        yield item;
-      }
+      yield* arg;
     }
   }
 
@@ -133,12 +139,12 @@ export class Generator {
    * // sequence: 1, 2, 4, 8, 16, 32, 64, 128, 256, 512
    * ```
    */
-  public static *generateFrom<TState, TNext>(config: {
+  public static *generateFrom<TState, TOut>(config: {
     initial: TState;
     predicate: Predicate<TState>;
-    selector: Selector<TState, TNext>;
+    selector: Selector<TState, TOut>;
     action: (current: TState) => TState;
-  }): Iterable<TNext> {
+  }): Iterable<TOut> {
     const { initial, predicate, selector, action } = config;
     if (!predicate) throw Exception.argumentNull("predicate");
     if (!selector) throw Exception.argumentNull("selector");
@@ -154,6 +160,9 @@ export class Generator {
     second: Iterable<TSecond>,
     selector: (f: T, s: TSecond) => TOut,
   ): Iterable<TOut> {
+    if (!source) throw Exception.argumentNull("source");
+    if (!second) throw Exception.argumentNull("second");
+    if (!selector) throw Exception.argumentNull("selector");
     const first = source[Symbol.iterator]();
     const secondIterator = second[Symbol.iterator]();
     let firstResult = first.next();

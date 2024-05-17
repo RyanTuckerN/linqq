@@ -78,10 +78,20 @@ export class Enumerable<T> implements IEnumerable<T> {
   }
 
   select<TOut>(selector: (x: T, i: number) => TOut): IEnumerable<TOut> {
-    return Utils.cast<IEnumerable<TOut>>(new WhereSelectIterator(this, undefined, selector));
+    if (!selector) throw Exception.argumentNull("selector");
+    let iterable: IEnumerable<TOut> | any;
+    if (Array.isArray(this.source)) {
+      iterable = new WhereSelectArrayIterator(this.source, undefined, selector);
+    } else if (this instanceof List) {
+      iterable = new WhereSelectArrayIterator(this.toArray(), undefined, selector);
+    } else {
+      iterable = new WhereSelectIterator(this, undefined, selector);
+    }
+    return Utils.cast<IEnumerable<TOut>>(iterable);
   }
 
   selectMany<TOut>(selector: SelectorWithIndex<T, Iterable<TOut>>): IEnumerable<TOut> {
+    if (!selector) throw Exception.argumentNull("selector");
     return Utils.cast<IEnumerable<TOut>>(new SelectManyIterator<T, TOut>(this, selector));
   }
 
@@ -90,6 +100,8 @@ export class Enumerable<T> implements IEnumerable<T> {
     func: (acc: TAccumulate, x: T) => TAccumulate,
     resultSelector?: (acc: TAccumulate) => TResult,
   ): TResult {
+    if (!this) throw Exception.argumentNull("source");
+    if (!func) throw Exception.argumentNull("func");
     return Operation.aggregate(this, seed, func, resultSelector);
   }
 
@@ -105,6 +117,7 @@ export class Enumerable<T> implements IEnumerable<T> {
     keySelector: Selector<T, TKey>,
     valueSelector?: Selector<T, TOut>,
   ): IDictionary<TKey, TOut> & Indexable<TKey, TOut> {
+    if (!keySelector) throw Exception.argumentNull("keySelector");
     return Dictionary.createDictionary<T, TKey, TOut>(this, keySelector, valueSelector);
   }
 
@@ -129,6 +142,10 @@ export class Enumerable<T> implements IEnumerable<T> {
     resultSelector: (x: T, y: TInner) => TOut,
     comparer?: IEqualityComparer<TKey> | undefined,
   ): IEnumerable<TOut> {
+    if (!inner) throw Exception.argumentNull("inner");
+    if (!outerKeySelector) throw Exception.argumentNull("outerKeySelector");
+    if (!innerKeySelector) throw Exception.argumentNull("innerKeySelector");
+    if (!resultSelector) throw Exception.argumentNull("resultSelector");
     return Utils.cast<IEnumerable<TOut>>(
       new JoinIterator(this, inner, outerKeySelector, innerKeySelector, resultSelector, comparer),
     );
@@ -141,6 +158,10 @@ export class Enumerable<T> implements IEnumerable<T> {
     resultSelector: (x: T, y: IEnumerable<TInner>) => TOut,
     comparer?: IEqualityComparer<TKey> | undefined,
   ): IEnumerable<TOut> {
+    if (!inner) throw Exception.argumentNull("inner");
+    if (!outerKeySelector) throw Exception.argumentNull("outerKeySelector");
+    if (!innerKeySelector) throw Exception.argumentNull("innerKeySelector");
+    if (!resultSelector) throw Exception.argumentNull("resultSelector");
     return Utils.cast<IEnumerable<TOut>>(
       new GroupJoinIterator(this, inner, outerKeySelector, innerKeySelector, resultSelector, comparer),
     );
@@ -189,6 +210,7 @@ export class Enumerable<T> implements IEnumerable<T> {
     return Operation.any(this, predicate);
   }
   all(predicate: PredicateWithIndex<T>): boolean {
+    if (!predicate) throw Exception.argumentNull("predicate");
     return Operation.all(this, predicate);
   }
 
@@ -197,18 +219,23 @@ export class Enumerable<T> implements IEnumerable<T> {
   }
 
   take(count: number): IEnumerable<T> {
+    if (count < 0) count = 0;
     return Enumerable.from(Generator.take(this, count));
   }
 
   takeWhile(predicate: PredicateWithIndex<T>): IEnumerable<T> {
+    if (!predicate) throw Exception.argumentNull("predicate");
     return Enumerable.from(Generator.takeWhile(this, predicate));
   }
 
   skip(count: number): IEnumerable<T> {
+    count = Math.floor(count);
+    if (count < 0) count = 0;
     return Enumerable.from(Generator.skip(this, count));
   }
 
   skipWhile(predicate: PredicateWithIndex<T>): IEnumerable<T> {
+    if (!predicate) throw Exception.argumentNull("predicate");
     return Enumerable.from(Generator.skipWhile(this, predicate));
   }
 
@@ -217,6 +244,7 @@ export class Enumerable<T> implements IEnumerable<T> {
   }
 
   distinctBy<TOut>(selector: Selector<T, TOut>): IEnumerable<T> {
+    if (!selector) throw Exception.argumentNull("selector");
     return Enumerable.from(Generator.distinctBy(this, selector));
   }
 
@@ -225,18 +253,23 @@ export class Enumerable<T> implements IEnumerable<T> {
   }
 
   intersect(other: IEnumerable<T> | T[], comparer: IEqualityComparer<T>): IEnumerable<T> {
+    if (!other) throw Exception.argumentNull("other");
     return Enumerable.from(Generator.intersect(this, other, comparer));
   }
 
   except(other: IEnumerable<T> | T[], comparer: IEqualityComparer<T>): IEnumerable<T> {
+    if (!other) throw Exception.argumentNull("other");
     return Enumerable.from(Generator.except(this, other, comparer));
   }
 
   concat(...args: Iterable<T>[]): IEnumerable<T> {
+    if (!args.length) throw Exception.argumentNull("args");
     return Enumerable.from(Generator.concat(this, ...args));
   }
 
   zip<TOut, TSecond = T>(second: Iterable<TSecond>, selector: (f: T, s: TSecond) => TOut): IEnumerable<TOut> {
+    if (!second) throw Exception.argumentNull("second");
+    if (!selector) throw Exception.argumentNull("selector");
     return Enumerable.from(Generator.zip(this, second, selector));
   }
 
@@ -273,25 +306,21 @@ export class Enumerable<T> implements IEnumerable<T> {
   }
 
   public static generateFrom<TState, TOut>(
-    getInitialState: () => TState,
+    initial: TState,
     predicate: Predicate<TState>,
     action: (state: TState) => TState,
     selector: Selector<TState, TOut>,
   ): IEnumerable<TOut> {
-    return Enumerable.from<TOut>(
-      Generator.generateFrom({
-        initial: getInitialState(),
-        predicate,
-        selector,
-        action,
-      }),
-    );
+    if (!predicate) throw Exception.argumentNull("predicate");
+    if (!selector) throw Exception.argumentNull("selector");
+    if (!action) throw Exception.argumentNull("action");
+    return Enumerable.from<TOut>(Generator.generateFrom({ initial, predicate, selector, action }));
   }
 }
 
 abstract class IteratorBase<TSource, TNext extends any = TSource> extends Enumerable<TSource> {
   protected sourceIterator = this.source[Symbol.iterator]();
-  protected state = 0; // 0 = before iteration, 1 = after iteration
+  protected state = 0; // 0 = before iteration, 1 = during iteration, 2 = after iteration
   public [Symbol.iterator](): IterableIterator<TSource & TNext> {
     return this.getIterator();
   }
@@ -300,8 +329,14 @@ abstract class IteratorBase<TSource, TNext extends any = TSource> extends Enumer
     return (
       this.moveNext() 
         ? { done: false, value: this.current } 
-        : { done: true, value: undefined }
+        : { done: this._done(), value: undefined }
       ) as IteratorResult<TSource & TNext>;
+  }
+
+  private _done(): true {
+    this.current = undefined as TNext;
+    this.state = 2; // 2 = done
+    return true;
   }
 
   constructor(protected source: Iterable<TSource>) {
@@ -320,11 +355,6 @@ abstract class IteratorBase<TSource, TNext extends any = TSource> extends Enumer
   }
 
   public abstract moveNext(): boolean;
-
-  private dispose(): void {
-    this.current = undefined as TSource & TNext;
-    this.state = 1;
-  }
 }
 
 class WhereIterator<TSource> extends IteratorBase<TSource> {
@@ -428,20 +458,16 @@ class WhereSelectArrayIterator<TSource, TOut> extends IteratorBase<TSource, TOut
   private index = 0;
   constructor(
     protected source: TSource[],
-    private _predicate: Predicate<TSource>,
+    private _predicate: Predicate<TSource> | undefined | null,
     private _selector: (item: TSource, index: number) => TOut,
   ) {
     super(source);
   }
 
-  public get predicate(): Predicate<TSource> {
-    return this._predicate;
-  }
-
   public moveNext(): boolean {
     while (this.index < this.source.length) {
       const item = this.source[this.index++];
-      if (this._predicate(item)) {
+      if (!this._predicate || this._predicate(item)) {
         this.current = this._selector(item, this.index - 1);
         return true;
       }
@@ -789,11 +815,11 @@ export class List<T> extends Enumerable<T> implements IList<T> {
   public static repeat<T>(element: T, count: number): IList<T> {
     return List.from(Enumerable.repeat(element, count));
   }
-  
+
   public static empty<T>(): IList<T> {
     return List.from<T>([]);
   }
-  
+
   public get length(): number {
     return this.source.length;
   }

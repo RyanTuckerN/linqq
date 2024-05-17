@@ -9,6 +9,7 @@ export class Operation {
     func: (acc: TAccumulate, x: T) => TAccumulate,
     resultSelector?: (acc: TAccumulate) => TResult,
   ): TResult {
+    if (!source) throw Exception.argumentNull("source");
     let acc = seed;
     for (const item of source) {
       acc = func(acc, item);

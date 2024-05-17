@@ -1,7 +1,7 @@
 {
   "name": "linqq",
-  "version": "0.0.4",
-  "description": "Why use Array.prototype methods, when you can use linq?",
+  "version": "1.0.0",
+  "description": "Why use Array.prototype methods, when you can use linqq?",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {

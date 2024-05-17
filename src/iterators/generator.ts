@@ -100,8 +100,6 @@ export class Generator {
     other: Iterable<T>,
     comparer?: IEqualityComparer<T>,
   ): Iterable<T> {
-    if (!source) throw Exception.argumentNull("source");
-    if (!other) throw Exception.argumentNull("other");
     let set: Set<T>;
     if (comparer) {
       set = new HashSet<T>(other, comparer);
@@ -114,7 +112,6 @@ export class Generator {
   }
 
   public static *concat<T>(source: Iterable<T>, ...args: Iterable<T>[]): Iterable<T> {
-    if (!source) throw Exception.argumentNull("source");
     yield* source;
     for (const arg of args) {
       yield* arg;
@@ -146,9 +143,6 @@ export class Generator {
     action: (current: TState) => TState;
   }): Iterable<TOut> {
     const { initial, predicate, selector, action } = config;
-    if (!predicate) throw Exception.argumentNull("predicate");
-    if (!selector) throw Exception.argumentNull("selector");
-    if (!action) throw Exception.argumentNull("action");
     if ("initial" in config && !predicate(initial)) return;
     for (let i = initial; predicate(i); i = action(i)) {
       yield selector(i);
@@ -160,9 +154,6 @@ export class Generator {
     second: Iterable<TSecond>,
     selector: (f: T, s: TSecond) => TOut,
   ): Iterable<TOut> {
-    if (!source) throw Exception.argumentNull("source");
-    if (!second) throw Exception.argumentNull("second");
-    if (!selector) throw Exception.argumentNull("selector");
     const first = source[Symbol.iterator]();
     const secondIterator = second[Symbol.iterator]();
     let firstResult = first.next();

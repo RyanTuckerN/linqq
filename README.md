@@ -13,10 +13,10 @@ npm install linqq
 linqq provides a fluent API for querying and manipulating data. Here's a basic example:
 
 ```typescript
-import linq from "linqq";
+import { linqq } from "linqq";
 
 const numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
-const result = linq(numbers)
+const result = linqq(numbers)
   .where((x) => x % 2 === 0)
   .toArray();
 
@@ -43,14 +43,14 @@ npm install linqq
 Then import it into your project:
 
 ```typescript
-import linq from "linqq";
+import { linqq } from "linqq";
 ```
 
-You can then use the `linq` function to create an enumerable from an array, set, map, or other iterable structure:
+You can then use the `linqq` function to create an enumerable from an array, set, map, or other iterable structure:
 
 ```typescript
 const numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
-const result = linq(numbers)
+const result = linqq(numbers)
   .where((x) => x % 2 === 0)
   .toArray();
 
@@ -61,23 +61,23 @@ You can also create/instantiate an enumerable with some static methods:
 
 ```typescript
 
-const range = linq.range(1, 10);
-const repeat = linq.repeat("hello", 3);
-const empty = linq.empty<number>();
-const from = linq.from([1, 2, 3, 4, 5]); 
+const range = linqq.range(1, 10); // Enumerable{ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 }
+const repeat = linqq.repeat("hello", 3); // Enumerable{ "hello", "hello", "hello" }
+const empty = linqq.empty<number>(); // Enumerable{ }
+const from = linqq.from([1, 2, 3, 4, 5]); // Enumerable{ 1, 2, 3, 4, 5 }
 ```
 
 ## API
 
 ### Deferred Execution
 
-In keeping with the principle of efficiency, all linqq operations are deferred until necessary. This means that the elements of the sequence are not computed or retrieved until they are enumerated. This can be beneficial for performance, especially when working with large sequences.
+In keeping with the principle of efficiency, all linqq operations are deferred until necessary. This means that the elements of the sequence are not computed or retrieved until they are enumerated. This can be beneficial when working with large sequences.
 
 ```typescript
-import linq from "linqq";
+import { linqq } from "linqq";
 
 const numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
-let query = linq(numbers)
+let query = linqq(numbers)
   .where((x) => x % 2 === 0)
   .select((x) => x * 2); // no iteration yet
 
@@ -97,30 +97,28 @@ const resultArray = query.toArray(); // trigger iteration/materialization and tr
 linqq can be used in React components to manipulate data before rendering. Here's an example:
 
 ```tsx
-import linq from "linqq";
+import linqq from "linqq";
 import React from "react";
 
 export const Users = ({ users }) => (
-  return (
-    <main>
-      {linq(users)
-        .groupBy(({ department, title }) => `${department} - ${title}`)
-        .select((group) => (
-          <section>
-            <h2>{group.key}</h2>
-            <ul>
-              {group
-                .orderBy((user) => user.name)
-                .select((user) => <li key={user.id}>{user.name}</li>)
-                .toList()
-              }
-            </ul>
-          </section>
-        ))
-        .toList()
-      }
-    </main>
-  )
+  <main>
+    {linqq(users)
+      .groupBy(({ department, title }) => `${department} - ${title}`)
+      .select((group) => (
+        <section>
+          <h2>{group.key}</h2>
+          <ul>
+            {group
+              .orderBy((user) => user.name)
+              .select((user) => <li key={user.id}>{user.name}</li>)
+              .toList()
+            }
+          </ul>
+        </section>
+      ))
+      .toList()
+    }
+  </main>
 );
 ```
 
@@ -128,23 +126,23 @@ export const Users = ({ users }) => (
 
 linqq works with any iterable structure
 
-#### `linq<T>(array: T[]): IList<T>`
+#### `linqq<T>(array: T[]): IList<T>`
 
 Creates a new list with the given array. The IList offers additional methods like `add`, `remove`, `clear`, `insert`
 
-#### `linq<T>(source: Iterable<T>): IEnumerable<T>`
+#### `linqq<T>(source: Iterable<T>): IEnumerable<T>`
 
 Creates a new enumerable with the given source.
 
-#### `linq<T>(new Set([1, 1, 2, 2, 3, 3, 4, 4, 5, 5])): IEnumerable<T>`
+#### `linqq<T>(new Set([1, 1, 2, 2, 3, 3, 4, 4, 5, 5])): IEnumerable<T>`
 
 Creates a new enumerable with the given set.
 
-#### `linq<T>(new Map([["a", 1], ["b", 2], ["c", 3]])): IEnumerable<[string, number]>`
+#### `linqq<T>(new Map([["a", 1], ["b", 2], ["c", 3]])): IEnumerable<[string, number]>`
 
 Creates a new enumerable with the given map.
 
-#### `linq<string>("hello world"): IEnumerable<string>`
+#### `linqq<string>("hello world"): IEnumerable<string>`
 
 Creates a new enumerable with the given string.
 
@@ -153,23 +151,24 @@ Creates a new enumerable with the given string.
 The full interface of the IEnumerable is as follows:
 
 ```typescript
-interface IEnumerable<T> extends Iterable<T>, IterableIterator<T> {
+export interface IEnumerable<T> extends Iterable<T> {
   // Transformation
   toArray(): T[];
   toList(): IList<T>;
   ensureList(): IList<T>;
-  toSet(comparer?: IEqualityComparer<T>): HashSet<T>;
+  toSet(): Set<T>;
+  toHashSet(comparer?: IEqualityComparer<T>): IHashSet<T>;
   toDictionary<TKey, TOut = T>(
     keySelector: Selector<T, TKey>,
     valueSelector?: Selector<T, TOut>,
   ): IDictionary<TKey, TOut> & Indexable<TKey, TOut>;
   cast<TOut>(): IEnumerable<TOut>;
-
+  
   // Aggregation
   aggregate<TAccumulate, TResult>(
     seed: TAccumulate,
     func: (acc: TAccumulate, x: T) => TAccumulate,
-    resultSelector: (acc: TAccumulate) => TResult,
+    resultSelector?: (acc: TAccumulate) => TResult,
   ): TResult;
   count(predicate?: Predicate<T>): number;
   sum(selector?: NumericSelector<T>): Numeric;
@@ -178,7 +177,7 @@ interface IEnumerable<T> extends Iterable<T>, IterableIterator<T> {
   average(selector: NumericSelector<T>): Numeric;
   max<TOut extends Comparable>(selector?: Selector<T, TOut>): TOut;
   min<TOut extends Comparable>(selector?: Selector<T, TOut>): TOut;
-
+  
   // Quantifiers
   any(predicate?: Predicate<T>): boolean;
   all(predicate: Predicate<T>): boolean;
@@ -197,7 +196,7 @@ interface IEnumerable<T> extends Iterable<T>, IterableIterator<T> {
   reverse(): IEnumerable<T>;
 
   // Query
-  where(predicate: Predicate<T>): IEnumerable<T>;
+  where(predicate: PredicateWithIndex<T>): IEnumerable<T>;
   select<TOut>(selector: SelectorWithIndex<T, TOut>): IEnumerable<TOut>;
   selectMany<TOut>(selector: SelectorWithIndex<T, Iterable<TOut>>): IEnumerable<TOut>;
   join<TInner, TKey, TOut>(
@@ -220,7 +219,7 @@ interface IEnumerable<T> extends Iterable<T>, IterableIterator<T> {
   takeWhile(predicate: PredicateWithIndex<T>): IEnumerable<T>;
   skip(count: number): IEnumerable<T>;
   skipWhile(predicate: PredicateWithIndex<T>): IEnumerable<T>;
-  concat(...args: Iterable<T>[]): IEnumerable<T>;
+  concat(...args: (Iterable<T>)[]): IEnumerable<T>;
   zip<TOut, TSecond = T>(second: Iterable<TSecond>, selector: (f: T, s: TSecond) => TOut): IEnumerable<TOut>;
 
   // Set
@@ -234,7 +233,7 @@ interface IEnumerable<T> extends Iterable<T>, IterableIterator<T> {
     elementSelector?: Selector<T, TNext>,
     comparer?: IEqualityComparer<TKey>,
   ): IEnumerable<IGrouping<TKey, T>>;
-
+  
   [Symbol.iterator](): IterableIterator<T>;
 }
 ```

@@ -24,6 +24,7 @@ import { Generator } from "../iterators/generator";
 import { Operation } from "../iterators/operation";
 import { Exception } from "../validator/exception";
 import { Utils } from "../util";
+import util from "util";
 
 export class Enumerable<T> implements IEnumerable<T> {
   public static from<T>(source: Iterable<T>): IEnumerable<T> {
@@ -36,6 +37,14 @@ export class Enumerable<T> implements IEnumerable<T> {
 
   *[Symbol.iterator](): IterableIterator<T> {
     yield* this.source;
+  }
+
+  [util.inspect.custom](): string {
+    return this.toString();
+  }
+
+  toString(): string {
+    return `${this.constructor.name} { ${this.toArray().join(", ")} }`
   }
 
   ensureList(): IList<T> {

@@ -56,12 +56,11 @@ export const from = Enumerable.from;
    * @throws If an error occurs during the generation and no error handler is provided.
    * @example
    * ```typescript
-   * const sequence = EnumerableOperations.generate({
-   * initial: 1, // x
-   * predicate: (x) => x < 10,
-   * action: (x) => x + 1,
-   * selector: (x) => x * 2,
-   * });
+   * const sequence = EnumerableOperations.generate(
+   *  1, // x
+   *  (x) => x < 10,
+   *  (x) => x + 1,
+   *  (x) => x * 2)
    * // sequence: 1, 2, 4, 8, 16, 32, 64, 128, 256, 512
    * ```
    */

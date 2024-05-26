@@ -1,7 +1,6 @@
 import { Grouping, HashSet, Lookup } from "../enumerables";
 import { IEqualityComparer, IEnumerable, IGrouping } from "../interfaces";
 import { PredicateWithIndex, Selector, Predicate, SelectorWithIndex } from "../types";
-import { Exception } from "../validator/exception";
 
 export class Generator {
   public static *where<T>(source: Iterable<T>, predicate: PredicateWithIndex<T>): Iterable<T> {

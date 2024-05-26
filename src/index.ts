@@ -1,5 +1,5 @@
 import { IEnumerable, IList } from "./interfaces";
-import { Enumerable, List } from "./enumerables";
+import { Enumerable } from "./enumerables";
 export * from "./enumerables";
 export * from "./types";
 export * from "./interfaces";

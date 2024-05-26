@@ -1,7 +1,7 @@
 import { KeyValuePair } from "../types";
 import { IEnumerable } from "./IEnumerable";
 
-export type Indexable<TKey, TOut> = { [K in TKey extends string ? string : TKey extends number ? number : never]: TOut };
+export type Indexable<TKey, TValue> = { [K in TKey extends string ? string : TKey extends number ? number : never]: TValue };
 export interface IDictionary<TKey, TValue> extends IEnumerable<KeyValuePair<TKey, TValue>> {
     keys: Iterable<TKey>;
     values: Iterable<TValue>;

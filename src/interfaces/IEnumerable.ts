@@ -8,8 +8,7 @@ import {
   SelectorWithIndex,
   Comparable,
 } from "../types";
-import { IGrouping, IEqualityComparer, IDictionary, IOrderedEnumerable, Indexable } from "./";
-import { HashSet } from "../enumerables";
+import { IGrouping, IEqualityComparer, IDictionary, IOrderedEnumerable, Indexable, IHashSet } from ".";
 import { IList } from "./IList";
 
 export interface IEnumerable<T> extends Iterable<T> {
@@ -18,7 +17,7 @@ export interface IEnumerable<T> extends Iterable<T> {
   toList(): IList<T>;
   ensureList(): IList<T>;
   toSet(): Set<T>;
-  toHashSet(comparer?: IEqualityComparer<T>): HashSet<T>;
+  toHashSet(comparer?: IEqualityComparer<T>): IHashSet<T>;
   toDictionary<TKey, TOut = T>(
     keySelector: Selector<T, TKey>,
     valueSelector?: Selector<T, TOut>,

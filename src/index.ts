@@ -46,11 +46,10 @@ export const from = Enumerable.from;
   /**
    * Generates a sequence of values starting with the initial value and applying the action to the current value
    * until the predicate returns false.
-   * @param config Configure the generator.
-   * @param config.initial `TState` The initial value.
-   * @param config.predicate `(state: TState) => boolean` The predicate to determine if the sequence should continue.
-   * @param config.action `(prevState: TState) => TState` The action to apply to the current value.
-   * @param config.selector `(TState) => TOut` The selector to transform the current value.
+   * @param initial `TState` The initial value.
+   * @param predicate `(state: TState) => boolean` The predicate to determine if the sequence should continue.
+   * @param action `(prevState: TState) => TState` The action to apply to the current value.
+   * @param selector `(TState) => TOut` The selector to transform the current value.
    * @returns An IEnumerable of values.
    * @throws If the predicate, selector, or action is null.
    * @throws If an error occurs during the generation and no error handler is provided.

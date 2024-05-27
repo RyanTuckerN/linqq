@@ -12,8 +12,6 @@ export class UniversalEqualityComparer<T> implements IEqualityComparer<T> {
         this.objectMap.set(item, ++this.idCounter);
       }
       return `hash_${this.objectMap.get(item)}`;
-    } else if (isFunction(item)) {
-      throw new Error("Function types cannot be hashed without a custom equality comparer.");
     } else {
       throw new Error("Unsupported type");
     }

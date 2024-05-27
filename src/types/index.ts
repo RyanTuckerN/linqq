@@ -1,4 +1,3 @@
-export type Numeric = number
 export type Comparable = number | bigint | Date;
 export type Orderable = number | bigint | Date | string | number;
 export type KeyValuePair<TKey, TValue> = { key: TKey; value: TValue };

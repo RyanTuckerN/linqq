@@ -1,5 +1,4 @@
 import {
-  Numeric,
   Predicate,
   Orderable,
   PredicateWithIndex,
@@ -7,7 +6,7 @@ import {
   NumericSelector,
   SelectorWithIndex,
   Comparable,
-} from "../types";
+} from "../";
 import { IGrouping, IEqualityComparer, IDictionary, IOrderedEnumerable, Indexable, IHashSet } from ".";
 import { IList } from "./IList";
 

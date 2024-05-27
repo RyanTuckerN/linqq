@@ -8,8 +8,6 @@ import {
   OrderSelector,
   Sorter,
   KeyValuePair,
-} from "../types";
-import {
   IEnumerable,
   IDictionary,
   IOrderedEnumerable,
@@ -18,7 +16,7 @@ import {
   IList,
   IHashSet,
   Indexable,
-} from "../interfaces";
+} from "../";
 import { UniversalEqualityComparer } from "../util/equality-comparers.ts";
 import { Generator } from "../iterators/generator";
 import { Operation } from "../iterators/operation";

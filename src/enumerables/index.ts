@@ -1187,7 +1187,3 @@ export class Dictionary<TK, TV, TPrev = TV> extends Enumerable<KeyValuePair<TK, 
     return `Dictionary(${this.map.size}): {${entries}}`;
   }
 }
-
-function isPredicateWithIndex<T>(predicate: any): predicate is PredicateWithIndex<T> {
-  return typeof predicate === "function" && predicate.length === 2;
-}

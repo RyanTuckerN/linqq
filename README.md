@@ -4,9 +4,22 @@ Why use array methods when you can use LINQ?
 
 ## Installation
 
+linqq was created as an exercise and is not currently available on npm. To install it, you can clone the repository and build it locally.
+
 ```bash
-npm install linqq
+git clone
+cd linqq
+npm install
+npm run build
+npm link
 ```
+
+Then in your project:
+
+```bash
+npm link linqq
+```
+
 
 ## Usage
 

@@ -73,11 +73,12 @@ console.log(result); // [2, 4, 6, 8, 10]
 You can also create/instantiate an enumerable with some static methods:
 
 ```typescript
+import { range, repeat, empty, from } from "linqq";
 
-const range = linqq.range(1, 10); // Enumerable{ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 }
-const repeat = linqq.repeat("hello", 3); // Enumerable{ "hello", "hello", "hello" }
-const empty = linqq.empty<number>(); // Enumerable{ }
-const from = linqq.from([1, 2, 3, 4, 5]); // Enumerable{ 1, 2, 3, 4, 5 }
+const rangeLinqq = range(1, 10); // Enumerable{ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 }
+const repeatLinqq = repeat("hello", 3); // Enumerable{ "hello", "hello", "hello" }
+const emptyLinqq = empty<number>(); // Enumerable{ }
+const fromLinqq = from([1, 2, 3, 4, 5]); // Enumerable{ 1, 2, 3, 4, 5 }
 ```
 
 ## API

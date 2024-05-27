@@ -97,7 +97,7 @@ const resultArray = query.toArray(); // trigger iteration/materialization and tr
 linqq can be used in React components to manipulate data before rendering. Here's an example:
 
 ```tsx
-import linqq from "linqq";
+import { linqq } from "linqq";
 import React from "react";
 
 export const Users = ({ users }) => (

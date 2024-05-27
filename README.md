@@ -105,7 +105,7 @@ export const Users = ({ users }) => (
     {linqq(users)
       .groupBy(({ department, title }) => `${department} - ${title}`)
       .select((group) => (
-        <section>
+        <section key={group.key}>
           <h2>{group.key}</h2>
           <ul>
             {group

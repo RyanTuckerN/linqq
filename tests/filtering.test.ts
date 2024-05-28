@@ -1,4 +1,4 @@
-import linq from "../src";
+import linq, { range } from "../src";
 
 test(" *** Filtering ***", () => {
   expect(emptyLinqArray).toHaveProperty("where");
@@ -47,15 +47,13 @@ test("where() - with index", () => {
   ).toEqual([4, 5]);
 
   expect(
-    linq
-      .range(0, 10)
+    range(0, 10)
       .where((_, i) => i > 5)
       .toArray(),
   ).toEqual([6, 7, 8, 9]);
 
   expect(
-    linq
-      .range(0, 10)
+    range(0, 10)
       .where((_, i) => i > 5) // 6, 7, 8, 9
       .where((_, i) => i > 1) // 8, 9
       .where((_, i) => i === 1) // 9
@@ -125,8 +123,7 @@ test("where() and select() - combination", () => {
 
 test("where() and select() - combination alternating", () => {
   expect(
-    linq
-      .range(0, 10)
+    range(0, 10)
       .select((x) => x * 2) // 0, 2, 4, 6, 8, 10, 12, 14, 16, 18
       .select((x) => x * 4) // 0, 8, 16, 24, 32, 40, 48, 56, 64, 72
       .where((x) => x > 10) // 16, 24, 32, 40, 48, 56, 64, 72
@@ -157,8 +154,7 @@ test("where() and select() - index and projection", () => {
 
 test("where() and select() - alternating with index", () => {
   expect(
-    linq
-      .range(0, 20)
+    range(0, 20)
       .where((x, i) => i > 5) // 6, 7, 8, 9
       .select((x, i) => x + i) // 6, 8, 10, 12
       .where((x, i) => i > 1) // 10, 12

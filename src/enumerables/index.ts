@@ -1074,8 +1074,8 @@ class HashMap<T> extends Map<string, T> {
 // @ts-ignore - we apply the transformation upon construction as well as in the iterator
 export class Dictionary<TK, TV, TPrev = TV> extends Enumerable<KeyValuePair<TK, TV>> implements IDictionary<TK, TV> {
   private map: Map<TK, TV>;
-  constructor(
-    protected source: Iterable<TPrev>,
+  private constructor(
+    source: Iterable<TPrev>,
     keySelector: (x: TPrev, index: number) => TK,
     valueSelector?: (x: TPrev, index: number) => TV,
   ) {

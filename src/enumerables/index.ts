@@ -14,8 +14,10 @@ import {
   IGrouping,
   IEqualityComparer,
   IList,
+  IPowerList,
   IHashSet,
   Indexable,
+  Comparator,
 } from "../";
 import { UniversalEqualityComparer } from "../util/equality-comparers.ts";
 import { Generator } from "../iterators/generator";
@@ -23,6 +25,7 @@ import { Operation } from "../iterators/operation";
 import { Exception } from "../validator/exception";
 import { Utils } from "../util";
 import util from "util";
+import { SortHelper, defaultComparator } from "../iterators/sort-operations";
 
 export class Enumerable<T> implements IEnumerable<T> {
   public static from<T>(source: Iterable<T>): IEnumerable<T> {
@@ -42,7 +45,7 @@ export class Enumerable<T> implements IEnumerable<T> {
   }
 
   toString(): string {
-    return `${this.constructor.name} { ${this.toArray().join(", ")} }`
+    return `${this.constructor.name} { ${this.toArray().join(", ")} }`;
   }
 
   ensureList(): IList<T> {
@@ -52,6 +55,10 @@ export class Enumerable<T> implements IEnumerable<T> {
 
   toList(): IList<T> {
     return List.from(this);
+  }
+
+  toPowerList(): IPowerList<T> {
+    return <IPowerList<T>>List.from(this); // All Lists are PowerLists, but we only expose the interface if it's explicitly requested since it has a lot of extra methods.
   }
 
   toArray(): T[] {
@@ -137,7 +144,7 @@ export class Enumerable<T> implements IEnumerable<T> {
     return Operation.sum(this, selector);
   }
 
-  average(selector?: NumericSelector<T> | undefined): number;
+  average(selector?: Partial<NumericSelector<T>> | undefined): number;
   average(selector: NumericSelector<T>): number {
     return Operation.average(this, selector);
   }
@@ -771,7 +778,7 @@ class GroupingIterator<TKey, TSource, TNext = TSource> extends IteratorBase<TSou
   }
 }
 
-export class List<T> extends Enumerable<T> implements IList<T> {
+export class List<T> extends Enumerable<T> implements IPowerList<T> {
   constructor(protected source: T[]) {
     super(source);
     return new Proxy(this, {
@@ -805,7 +812,7 @@ export class List<T> extends Enumerable<T> implements IList<T> {
     this.source[index] = value;
   }
 
-  public static from<T>(source: T[] | IEnumerable<T>): IList<T> {
+  public static from<T>(source: T[] | IEnumerable<T>): IPowerList<T> {
     if (source instanceof List) return source;
     let newSource = source;
     if (!Array.isArray(source)) {
@@ -849,6 +856,15 @@ export class List<T> extends Enumerable<T> implements IList<T> {
     this.source.push(element);
     return true;
   }
+  addRange(elements: Iterable<T> | T[]): number {
+    if (Array.isArray(elements)) {
+      this.source.concat(elements);
+      return elements.length;
+    } else {
+      const prevLength = this.length;
+      return this.source.push(...elements) - prevLength;
+    }
+  }
   remove(element: T): boolean {
     const index = this.source.indexOf(element);
     if (index === -1) return false;
@@ -860,6 +876,210 @@ export class List<T> extends Enumerable<T> implements IList<T> {
   }
   forEach(action: (element: T, index: number, list: this) => void): void {
     this.source.forEach((v, i) => action(v, i, this));
+  }
+  partition(predicate: (element: T) => boolean): [IPowerList<T>, IPowerList<T>] {
+    return this.aggregate([List.empty<T>(), List.empty<T>()], (acc, x) => {
+      acc[predicate(x) ? 0 : 1].add(x);
+      return acc;
+    });
+  }
+  shuffle(): IPowerList<T> {
+    return (this.deepClone() as IPowerList<T>).shuffleInPlace();
+  }
+  shuffleInPlace(): this {
+    const array = this.source;
+    let currentIndex = array.length,
+      randomIndex: number;
+    while (currentIndex !== 0) {
+      randomIndex = Math.floor(Math.random() * currentIndex);
+      currentIndex--;
+      [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
+    }
+    return this;
+  }
+  rotate(steps: number): IPowerList<T> {
+    return (this.deepClone() as IPowerList<T>).rotateInPlace(steps);
+  }
+  rotateInPlace(steps: number): this {
+    if (this.isEmpty()) return this;
+    const index = steps % this.length;
+    if (index < 0) {
+      this.source.unshift(...this.source.splice(this.length + index, -index));
+    } else {
+      this.source.push(...this.source.splice(0, index));
+    }
+    return this;
+  }
+  deepClone(): IPowerList<T> {
+    return List.from(this.source.map((x) => structuredClone(x)));
+  }
+  reverseInPlace(): this {
+    this.source.reverse();
+    return this;
+  }
+  transform<TOut>(selector: (element: T, index: number, list: this) => TOut): IPowerList<TOut> {
+    this.source.forEach((v, i) => ((this.source as any[])[i] = selector(v, i, this)));
+    return Utils.cast<IPowerList<TOut>>(this);
+  }
+  maxBy(selector: (element: T) => number): T {
+    return this.aggregate(this.source[0], (max, x) => (selector(x) > selector(max) ? x : max));
+  }
+  minBy(selector: (element: T) => number): T {
+    return this.aggregate(this.source[0], (min, x) => (selector(x) < selector(min) ? x : min));
+  }
+  paginate(pageSize: number, pageNumber = 1): IPowerList<T> {
+    if (pageSize == undefined) Exception.argumentNull("pageSize");
+    if (pageSize <= 0) return <IPowerList<T>>List.empty<T>();
+    return List.from(this.source.slice(pageSize * (pageNumber - 1), pageSize * pageNumber));
+  }
+  frequencies(): IDictionary<T, number> {
+    return this.aggregate(Dictionary.fromMap(new Map()), (acc, x) => {
+      acc.set(x, (acc.containsKey(x) ? acc.get(x) : 0) + 1);
+      return acc;
+    });
+  }
+  top(n: number, comparator: Comparator<T> = defaultComparator): IPowerList<T> {
+    return List.from(this.source.slice().sort(comparator).slice(0, n));
+  }
+  bottom(n: number, comparator: Comparator<T> = defaultComparator): IPowerList<T> {
+    return List.from(this.source.slice().sort(comparator).slice(-n));
+  }
+  getRandom(): T {
+    return this.source[Math.floor(Math.random() * this.length)];
+  }
+  popRandom(): T {
+    return this.source.splice(Math.floor(Math.random() * this.length), 1)[0];
+  }
+  sample(count: number): IPowerList<T> {
+    if (count <= 0) return <IPowerList<T>>List.empty<T>();
+    if (count > this.length) return this.shuffle();
+    let seen = new Set<number>();
+    let result = new Array<T>(count);
+    while (count) {
+      const rand = Math.floor(Math.random() * this.length);
+      if (!seen.has(rand)) {
+        seen.add(rand);
+        result[--count] = this.source[rand];
+      }
+    }
+    return List.from(result);
+  }
+  sort(comparator?: Comparator<T> | undefined): this {
+    SortHelper.sort(this.source, comparator);
+    return this;
+  }
+  mergeSort(comparator?: Comparator<T>): this {
+    SortHelper.mergeSort(this.source, comparator);
+    return this;
+  }
+  quickSort(comparator?: Comparator<T>): this {
+    SortHelper.quickSort(this.source, comparator);
+    return this;
+  }
+  bubbleSort(comparator?: Comparator<T>): this {
+    SortHelper.bubbleSort(this.source, comparator);
+    return this;
+  }
+  insertionSort(comparator?: Comparator<T>): this {
+    SortHelper.insertionSort(this.source, comparator);
+    return this;
+  }
+  selectionSort(comparator?: Comparator<T>): this {
+    SortHelper.selectionSort(this.source, comparator);
+    return this;
+  }
+  heapSort(comparator?: Comparator<T>): this {
+    SortHelper.heapSort(this.source, comparator);
+    return this;
+  }
+  shellSort(comparator?: Comparator<T>): this {
+    SortHelper.shellSort(this.source, comparator);
+    return this;
+  }
+  stdDeviation(selector?: Selector<T, number>): number {
+    return Math.sqrt(this.variance(selector));
+  }
+  mean(selector?: Selector<T, number>): number {
+    return this.average(selector);
+  }
+  median(selector?: Selector<T, number>): number {
+    if (this.isEmpty()) throw Exception.sequenceEmpty();
+    selector ??= (x) => x as number;
+    const sorted = this.source.slice().sort((a, b) => selector(a) - selector(b));
+    const mid = Math.floor(this.length / 2);
+    return this.length % 2 === 0 ? (selector(sorted[mid - 1]) + selector(sorted[mid])) / 2 : selector(sorted[mid]);
+  }
+  mode(selector?: Selector<T, number>): IPowerList<number> {
+    if (this.isEmpty()) throw Exception.sequenceEmpty();
+    selector ??= (x) => x as number;
+    const f = this.frequencies();
+    const max = f.max((x) => x.value);
+    return List.from(f.where((x) => x.value === max).select((x) => x.value));
+  }
+  variance(selector?: Selector<T, number>): number {
+    if (this.isEmpty()) throw Exception.sequenceEmpty();
+    selector ??= (x) => x as number;
+    const mean = this.mean(selector);
+    return this.aggregate(0, (acc, x) => acc + Math.pow(selector(x) - mean, 2)) / this.length;
+  }
+  percentile(percentile: number, selector?: Selector<T, number>): number {
+    if (this.isEmpty()) throw Exception.sequenceEmpty();
+    selector ??= (x) => x as number;
+    const sorted = this.source.slice().sort((a, b) => selector(a) - selector(b));
+    const index = Math.floor((percentile / 100) * this.length);
+    return selector(sorted[index]);
+  }
+  product(selector?: Selector<T, number>): number {
+    selector ??= (x) => x as number;
+    return this.aggregate(1, (acc, x) => acc * selector(x));
+  }
+  harmonicMean(selector?: Selector<T, number>): number {
+    selector ??= (x) => x as number;
+    return this.length / this.aggregate(0, (acc, x) => acc + 1 / selector(x));
+  }
+  geometricMean(selector?: Selector<T, number>): number {
+    selector ??= (x) => x as number;
+    return Math.pow(this.product(selector), 1 / this.length);
+  }
+  minMax(selector?: Selector<T, number>): { min: number; max: number } {
+    if (this.isEmpty()) throw Exception.sequenceEmpty();
+    selector ??= (x) => x as number;
+    let min = selector(this.source[0]);
+    let max = min;
+    for (const item of this.source) {
+      const value = selector(item);
+      min = Math.min(min, value);
+      max = Math.max(max, value);
+    }
+    return { min, max };
+  }
+  minMaxBy(selector: Selector<T, number>): { min: T; max: T } {
+    if (this.isEmpty()) throw Exception.sequenceEmpty();
+    let min = this.source[0];
+    let max = min;
+    for (const item of this.source) {
+      min = selector(item) < selector(min) ? item : min;
+      max = selector(item) > selector(max) ? item : max;
+    }
+    return { min, max };
+  }
+  range(selector?: Selector<T, number>): number {
+    if (this.isEmpty()) throw Exception.sequenceEmpty();
+    selector ??= (x) => x as number;
+    const { min, max } = this.minMax(selector);
+    return max - min;
+  }
+  normalize(selector?: Selector<T, number>): IPowerList<number> {
+    if (this.isEmpty()) throw Exception.sequenceEmpty();
+    selector ??= (x) => x as number;
+    const { min, max } = this.minMax(selector);
+    return List.from(this.source.map((x) => (selector(x) - min) / (max - min)));
+  }
+  cumulativeSum(selector?: Selector<T, number>): IPowerList<number> {
+    if (this.isEmpty()) throw Exception.sequenceEmpty();
+    selector ??= (x) => x as number;
+    let sum = 0;
+    return List.from(this.source.map((x) => (sum += selector(x))));
   }
 
   public override sum(selector?: NumericSelector<T> | undefined): number;
@@ -949,9 +1169,7 @@ export class List<T> extends Enumerable<T> implements IList<T> {
 export class Lookup<TKey, T> implements Iterable<KeyedArray<TKey, T>> {
   private map: Map<string, KeyedArray<TKey, T>>;
   *[Symbol.iterator]() {
-    for (const item of this.map.values()) {
-      yield item;
-    }
+    yield* this.map.values();
   }
 
   private constructor(private comparer: IEqualityComparer<TKey> = new UniversalEqualityComparer<TKey>()) {
@@ -1076,18 +1294,34 @@ export class Dictionary<TK, TV, TPrev = TV> extends Enumerable<KeyValuePair<TK, 
   private map: Map<TK, TV>;
   private constructor(
     source: Iterable<TPrev>,
-    keySelector: (x: TPrev, index: number) => TK,
+    keySelector?: (x: TPrev, index: number) => TK,
     valueSelector?: (x: TPrev, index: number) => TV,
   ) {
+    if (source instanceof Map) {
+      super(Dictionary.fromMapToIterable(source as Map<TK, TV>));
+      this.map = source as Map<TK, TV>;
+      return Dictionary.constructProxy(this);
+    }
+
+    if (!keySelector) throw Exception.argumentNull("keySelector");
+
     const map = new Map<TK, TV>();
     let index = 0;
     for (const item of source) {
       map.set(keySelector(item, index), valueSelector ? valueSelector(item, index) : (item as TV & TPrev));
       index++;
     }
-    super(Dictionary.fromMap(map));
+    super(Dictionary.fromMapToIterable(map));
     this.map = map;
-    return new Proxy(this, {
+    return Dictionary.constructProxy(this);
+  }
+
+  public static fromMap<TK, TV>(map: Map<TK, TV>): IDictionary<TK, TV> {
+    return new Dictionary(map);
+  }
+
+  private static constructProxy<TK, TV>(target: Dictionary<TK, TV>) {
+    return new Proxy(target, {
       get(target, prop, receiver) {
         if (prop in target) return Reflect.get(target, prop, receiver);
         let propKey = prop as any;
@@ -1108,14 +1342,14 @@ export class Dictionary<TK, TV, TPrev = TV> extends Enumerable<KeyValuePair<TK, 
     }) as IDictionary<TK, TV> & Indexable<TK, TV> & any;
   }
 
-  private static *fromMap<TK, TV>(map: Map<TK, TV>): Iterable<KeyValuePair<TK, TV>> {
+  private static *fromMapToIterable<TK, TV>(map: Map<TK, TV>): Iterable<KeyValuePair<TK, TV>> {
     for (const [key, value] of map.entries()) {
       yield { key, value };
     }
   }
 
   public *[Symbol.iterator](): IterableIterator<KeyValuePair<TK, TV>> {
-    yield* Dictionary.fromMap(this.map);
+    yield* Dictionary.fromMapToIterable(this.map);
   }
 
   public get keys(): Iterable<TK> {

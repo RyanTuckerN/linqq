@@ -7,7 +7,7 @@ import {
   SelectorWithIndex,
   Comparable,
 } from "../";
-import { IGrouping, IEqualityComparer, IDictionary, IOrderedEnumerable, Indexable, IHashSet } from ".";
+import { IGrouping, IEqualityComparer, IDictionary, IOrderedEnumerable, Indexable, IHashSet, IPowerList } from ".";
 import { IList } from "./IList";
 
 export interface IEnumerable<T> extends Iterable<T> {
@@ -22,6 +22,12 @@ export interface IEnumerable<T> extends Iterable<T> {
    * @returns A List of the elements in the IEnumerable.
    */
   toList(): IList<T>;
+  /**
+   * Transform the elements in the IEnumerable to an PowerList.
+   * A PowerList is a List with additional many additional methods, ranging from partitioning, advanced aggregation, and math operations.
+   * @returns A PowerList of the elements in the IEnumerable.
+   */
+  toPowerList(): IPowerList<T>;
   /**
    * Transform the elements in the IEnumerable to a List.
    * @returns A List of the elements in the IEnumerable.
@@ -53,7 +59,7 @@ export interface IEnumerable<T> extends Iterable<T> {
    * @returns An IEnumerable of the elements cast to the specified type.
    */
   cast<TOut>(): IEnumerable<TOut>;
-  
+
   // Aggregation
   /**
    * Perform an aggregation on the elements in the IEnumerable.
@@ -99,7 +105,7 @@ export interface IEnumerable<T> extends Iterable<T> {
    * @returns The minimum element in the IEnumerable.
    */
   min<TOut extends Comparable>(selector?: Selector<T, TOut>): TOut;
-  
+
   // Quantifiers
   /**
    * Check if any elements in the IEnumerable satisfy the predicate.
@@ -279,7 +285,7 @@ export interface IEnumerable<T> extends Iterable<T> {
    * @param args The sequences to concatenate.
    * @returns A new IEnumerable with the sequences concatenated.
    */
-  concat(...args: (Iterable<T>)[]): IEnumerable<T>;
+  concat(...args: Iterable<T>[]): IEnumerable<T>;
   /**
    * Zip two sequences together.
    * @param second The sequence to zip with.
@@ -304,7 +310,7 @@ export interface IEnumerable<T> extends Iterable<T> {
    * Union two sequences into an IEnumerable of unique elements.
    * @param other The sequence to union with.
    * @param comparer (optional) The comparer to compare elements with.
-   * @returns A new IEnumerable with the sequences unioned.
+   * @returns A new IEnumerable with the sequences combined.
    */
   union(other: T[] | IEnumerable<T>, comparer?: IEqualityComparer<T>): IEnumerable<T>;
   /**
@@ -333,6 +339,6 @@ export interface IEnumerable<T> extends Iterable<T> {
     elementSelector?: Selector<T, TNext>,
     comparer?: IEqualityComparer<TKey>,
   ): IEnumerable<IGrouping<TKey, T>>;
-  
+
   [Symbol.iterator](): IterableIterator<T>;
 }

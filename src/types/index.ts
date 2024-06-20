@@ -8,3 +8,4 @@ export type NumericSelector<T> = Selector<T, number>;
 export type OrderSelector<T> = Selector<T, Orderable>;
 export type Predicate<T> = (item: T) => boolean;
 export type PredicateWithIndex<T> = (item: T, index: number) => boolean;
+export type Comparator<T> = (a: T, b: T) => number;

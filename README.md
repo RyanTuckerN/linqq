@@ -73,13 +73,69 @@ console.log(result); // [2, 4, 6, 8, 10]
 You can also create/instantiate an enumerable with some static methods:
 
 ```typescript
-import { range, repeat, empty, from } from "linqq";
+import { range, repeat, empty, from, dictionaryFromMap } from "linqq";
 
 const rangeLinqq = range(1, 10); // Enumerable{ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 }
 const repeatLinqq = repeat("hello", 3); // Enumerable{ "hello", "hello", "hello" }
 const emptyLinqq = empty<number>(); // Enumerable{ }
 const fromLinqq = from([1, 2, 3, 4, 5]); // Enumerable{ 1, 2, 3, 4, 5 }
+const dictionary = dictionaryFromMap(new Map([["a", 1], ["b", 2], ["c", 3]])); // Dictionary{ "a" => 1, "b" => 2, "c" => 3 }
 ```
+
+By default, you must pass an iterable source to the `linqq` function. However, you can easily extend the Array prototype to easily access `linqq` functionality:
+
+```typescript
+import { linqq } from "linqq";
+
+// Add this near the root of your project
+declare global {
+  interface Array<T> {
+    /**
+     * Convert the Array to an Enumerable.
+     * @returns An Enumerable from the Array.
+     */
+    toEnumerable(): IEnumerable<T>;
+  }
+}
+
+Array.prototype.toEnumerable = function() {
+  return linqq(this);
+};
+```
+
+Similarly, you can easily extend the Set and Map prototypes:
+
+```typescript
+import { linqq } from "linqq";
+
+// Add this near the root of your project
+declare global {
+  interface Set<T> {
+    /**
+     * Convert the Set to an Enumerable.
+     * @returns An Enumerable from the Set.
+     */
+    toEnumerable(): IEnumerable<T>;
+  }
+
+  interface Map<K, V> {
+    /**
+     * Convert the Map to an Enumerable.
+     * @returns An Enumerable from the Map.
+     */
+    toEnumerable(): IEnumerable<[K, V]>;
+  }
+}
+
+Set.prototype.toEnumerable = function() {
+  return linqq(this);
+};
+
+Map.prototype.toEnumerable = function() {
+  return linqq(this);
+};
+```
+
 
 ## API
 

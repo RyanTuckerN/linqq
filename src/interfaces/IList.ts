@@ -44,6 +44,12 @@ export interface IList<T> extends IEnumerable<T> {
    */
   add(element: T): boolean;
   /**
+   * Adds the elements of the specified collection to the end of the List.
+   * @param elements The collection whose elements should be added to the end of the List.
+   * @returns The number of elements added to the List.
+   */
+  addRange(elements: Iterable<T> | T[]): number;
+  /**
    * Removes the first occurrence of a specific object from the List.
    * @param element The object to remove from the List.
    * @returns true if item was successfully removed from the List; otherwise, false.

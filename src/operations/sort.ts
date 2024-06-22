@@ -5,7 +5,7 @@ export function defaultComparator<T>(a: T, b: T): number {
   return a < b ? -1 : 1;
 }
 
-export class SortHelper {
+export class Sort {
   public static sort<T>(array: T[], comparator: Comparator<T> = defaultComparator): T[] {
     // the default sort implementation in JavaScript
     return array.sort(comparator);

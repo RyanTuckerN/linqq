@@ -1,6 +1,6 @@
-import { Grouping, HashSet, Lookup } from "../enumerables";
-import { IEqualityComparer, IEnumerable, IGrouping } from "../interfaces";
-import { PredicateWithIndex, Selector, Predicate, SelectorWithIndex } from "../types";
+import { HashSet } from "../enumerables";
+import { IEqualityComparer, IList } from "../interfaces";
+import { PredicateWithIndex, Selector, Predicate } from "../types";
 
 export class Generator {
   public static *where<T>(source: Iterable<T>, predicate: PredicateWithIndex<T>): Iterable<T> {
@@ -79,11 +79,7 @@ export class Generator {
     yield* set.values();
   }
 
-  public static *intersect<T>(
-    source: Iterable<T>,
-    other: Iterable<T>,
-    comparer?: IEqualityComparer<T>,
-  ): Iterable<T> {
+  public static *intersect<T>(source: Iterable<T>, other: Iterable<T>, comparer?: IEqualityComparer<T>): Iterable<T> {
     let set: Set<T>;
     if (comparer) {
       set = new HashSet<T>(other, comparer);
@@ -94,11 +90,7 @@ export class Generator {
       if (set.has(item)) yield item;
     }
   }
-  public static *except<T>(
-    source: Iterable<T>,
-    other: Iterable<T>,
-    comparer?: IEqualityComparer<T>,
-  ): Iterable<T> {
+  public static *except<T>(source: Iterable<T>, other: Iterable<T>, comparer?: IEqualityComparer<T>): Iterable<T> {
     let set: Set<T>;
     if (comparer) {
       set = new HashSet<T>(other, comparer);
@@ -161,18 +153,6 @@ export class Generator {
       yield selector(firstResult.value, secondResult.value);
       firstResult = first.next();
       secondResult = secondIterator.next();
-    }
-  }
-
-  public static *groupBy<T, TKey, TNext = T>(
-    source: IEnumerable<T>,
-    keySelector: Selector<T, TKey>,
-    elementSelector?: Selector<T, TNext>,
-    comparer?: IEqualityComparer<TKey>,
-  ): Iterable<IGrouping<TKey, TNext>> {
-    const lookup = Lookup.create(source, keySelector, elementSelector ?? ((x) => x as T & TNext), comparer);
-    for (const group of lookup) {
-      yield Grouping.createGrouping<TKey, TNext>(group, group.key);
     }
   }
 }

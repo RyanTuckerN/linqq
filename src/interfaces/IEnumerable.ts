@@ -340,5 +340,7 @@ export interface IEnumerable<T> extends Iterable<T> {
     comparer?: IEqualityComparer<TKey>,
   ): IEnumerable<IGrouping<TKey, T>>;
 
+  sequenceEqual(other: Iterable<T>, comparer?: IEqualityComparer<T>): boolean;
+
   [Symbol.iterator](): IterableIterator<T>;
 }

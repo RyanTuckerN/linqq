@@ -20,12 +20,12 @@ import {
   Comparator,
 } from "../";
 import { UniversalEqualityComparer } from "../util/equality-comparers.ts";
-import { Generator } from "../iterators/generator";
-import { Operation } from "../iterators/operation";
+import { Generator } from "../operations/generator";
+import { Operation } from "../operations/operation";
 import { Exception } from "../validator/exception";
 import { Utils } from "../util";
 import util from "util";
-import { SortHelper, defaultComparator } from "../iterators/sort-operations";
+import { Sort, defaultComparator } from "../operations/sort";
 
 export class Enumerable<T> implements IEnumerable<T> {
   public static from<T>(source: Iterable<T>): IEnumerable<T> {
@@ -293,6 +293,10 @@ export class Enumerable<T> implements IEnumerable<T> {
     comparer?: IEqualityComparer<TKey>,
   ): IEnumerable<IGrouping<TKey, T>> {
     return new GroupingIterator(this, keySelector, elementSelector, comparer) as IEnumerable<IGrouping<TKey, T>>;
+  }
+
+  sequenceEqual(other: Iterable<T>, comparer?: IEqualityComparer<T> | undefined): boolean {
+    return Operation.sequenceEqual(this, other, comparer);
   }
 
   orderBy(selector: OrderSelector<T>): IOrderedEnumerable<T> {
@@ -965,35 +969,35 @@ export class List<T> extends Enumerable<T> implements IPowerList<T> {
     return List.from(result);
   }
   sort(comparator?: Comparator<T> | undefined): this {
-    SortHelper.sort(this.source, comparator);
+    Sort.sort(this.source, comparator);
     return this;
   }
   mergeSort(comparator?: Comparator<T>): this {
-    SortHelper.mergeSort(this.source, comparator);
+    Sort.mergeSort(this.source, comparator);
     return this;
   }
   quickSort(comparator?: Comparator<T>): this {
-    SortHelper.quickSort(this.source, comparator);
+    Sort.quickSort(this.source, comparator);
     return this;
   }
   bubbleSort(comparator?: Comparator<T>): this {
-    SortHelper.bubbleSort(this.source, comparator);
+    Sort.bubbleSort(this.source, comparator);
     return this;
   }
   insertionSort(comparator?: Comparator<T>): this {
-    SortHelper.insertionSort(this.source, comparator);
+    Sort.insertionSort(this.source, comparator);
     return this;
   }
   selectionSort(comparator?: Comparator<T>): this {
-    SortHelper.selectionSort(this.source, comparator);
+    Sort.selectionSort(this.source, comparator);
     return this;
   }
   heapSort(comparator?: Comparator<T>): this {
-    SortHelper.heapSort(this.source, comparator);
+    Sort.heapSort(this.source, comparator);
     return this;
   }
   shellSort(comparator?: Comparator<T>): this {
-    SortHelper.shellSort(this.source, comparator);
+    Sort.shellSort(this.source, comparator);
     return this;
   }
   stdDeviation(selector?: Selector<T, number>): number {
@@ -1080,6 +1084,37 @@ export class List<T> extends Enumerable<T> implements IPowerList<T> {
     selector ??= (x) => x as number;
     let sum = 0;
     return List.from(this.source.map((x) => (sum += selector(x))));
+  }
+
+  chunk(size: number): IPowerList<IPowerList<T>> {
+    if (size <= 0) throw Exception.argument("size must be greater than 0");
+    const result = List.empty<IPowerList<T>>();
+    for (let i = 0; i < this.length; i += size) {
+      result.add(List.from(this.source.slice(i, i + size)));
+    }
+    return result as IPowerList<IPowerList<T>>;
+  }
+
+  scan<TAccumulate>(
+    seed: TAccumulate,
+    accumulator: (acc: TAccumulate, value: T) => TAccumulate,
+  ): IPowerList<TAccumulate> {
+    const result = List.empty<TAccumulate>();
+    let acc = seed;
+    for (const item of this.source) {
+      acc = accumulator(acc, item);
+      result.add(acc);
+    }
+    return result as IPowerList<TAccumulate>;
+  }
+
+  window(size: number): IPowerList<IPowerList<T>> {
+    if (size <= 0) throw Exception.argument("size must be greater than 0");
+    const result = List.empty<IPowerList<T>>();
+    for (let i = 0; i < this.length - size + 1; i++) {
+      result.add(List.from(this.source.slice(i, i + size)));
+    }
+    return result as IPowerList<IPowerList<T>>;
   }
 
   public override sum(selector?: NumericSelector<T> | undefined): number;

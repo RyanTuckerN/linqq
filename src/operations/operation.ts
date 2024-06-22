@@ -148,4 +148,20 @@ export class Operation {
     }
     return false;
   }
+
+  public static sequenceEqual<T>(source: Iterable<T>, other: Iterable<T>, comparer?: IEqualityComparer<T>): boolean {
+    const it1 = source[Symbol.iterator]();
+    const it2 = other[Symbol.iterator]();
+    while (true) {
+      const el1 = it1.next();
+      const el2 = it2.next();
+      if (el1.done !== el2.done) return false;
+      if (el1.done) return true;
+      if (comparer) {
+        if (!comparer.equals(el1.value, el2.value)) return false;
+      } else {
+        if (el1.value !== el2.value) return false;
+      }
+    }
+  }
 }

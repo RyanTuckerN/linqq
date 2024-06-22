@@ -1,14 +1,17 @@
-import { Comparator, Selector } from "../types";
+import { Comparator, Predicate, Selector } from "../types";
 import { IDictionary } from "./IDictionary";
 import { IList } from "./IList";
 
 export interface IPowerList<T> extends IList<T> {
   /**
-   * Returns an array of two Lists, one with elements that match the predicate and one with elements that do not.
+   * Returns an tuple of two Lists, one with elements that match the predicate and one with elements that do not.
    * @param predicate A function that accepts an argument; the function to perform on each element of the List.
-   * @returns An array of two Lists, one with elements that match the predicate and one with elements that do not.
+   * @returns An tuple of two Lists, one with elements that match the predicate and one with elements that do not.
+   * @example
+   * const list = PowerList.from([1, 2, 3, 4, 5]);
+   * const [even, odd] = list.partition((x) => x % 2 === 0);
    */
-  partition(predicate: (element: T) => boolean): [IPowerList<T>, IPowerList<T>];
+  partition(predicate: Predicate<T>): [IPowerList<T>, IPowerList<T>];
   /**
    * Creates a new List with the elements in a random order.
    * @returns A new List with the elements in a random order.
@@ -283,4 +286,29 @@ export interface IPowerList<T> extends IList<T> {
    * @returns A new list containing the cumulative sums.
    */
   cumulativeSum(selector?: Selector<T, number>): IPowerList<number>;
+
+  /**
+   * Batch the elements of the list into chunks of a specified size.
+   * @param size The number of elements in each chunk.
+   * @returns A new list of chunks.
+   * @example
+   * const list = PowerList.from([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+   * const chunks = list.chunk(3);
+   * // chunks: { { 1, 2, 3 }, { 4, 5, 6 }, { 7, 8, 9 }, { 10 } }
+   */
+  chunk(size: number): IPowerList<IPowerList<T>>;
+
+  /**
+   * Applies an accumulator function over the elements of the list, returning an IEnumerable of accumulated values at each step.
+   * @param seed The initial accumulator value.
+   * @param func An accumulator function to be invoked on each element.
+   */
+  scan<TAccumulate>(seed: TAccumulate, accumulator: (acc: TAccumulate, value: T) => TAccumulate): IPowerList<TAccumulate>;
+
+  /**
+   * Generate a sliding window over the elements of the list. Useful for computing moving averages or other windowed statistics.
+   * @param size The number of elements in each window.
+   * @returns A new list of sliding windows.
+   */
+  window(size: number): IPowerList<IPowerList<T>>;
 }

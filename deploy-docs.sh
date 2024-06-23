@@ -25,12 +25,9 @@ cp -r doc/build/* gh-pages/
 echo "Deploying to GitHub Pages..."
 cd gh-pages
 git add .
-if git commit -m "Update documentation site"; then
-  git push origin gh-pages
-  echo "Deployment complete!"
-else
-  echo "No changes to commit. Deployment skipped."
-fi
+git commit -m "Update documentation site"; then
+git push origin gh-pages
+echo "Deployment complete!"
 
 cd ..
 git checkout main

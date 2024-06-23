@@ -1,0 +1,25 @@
+@import url("https://fonts.googleapis.com/css2?family=Ubuntu+Mono:ital,wght@0,400;0,700;1,400;1,700&display=swap");
+
+:root {
+  --ifm-font-family-base: "Ubuntu Mono", monospace;
+}
+
+html[data-theme="light"] {
+  --ifm-color-primary: #005c8a;
+  --ifm-color-primary-dark: #00537c;
+  --ifm-color-primary-darker: #004e75;
+  --ifm-color-primary-darkest: #004061;
+  --ifm-color-primary-light: #006598;
+  --ifm-color-primary-lighter: #006a9f;
+  --ifm-color-primary-lightest: #0078b3;
+}
+
+html[data-theme="dark"] {
+  --ifm-color-primary: #5ad4dd;
+  --ifm-color-primary-dark: #40cdd8;
+  --ifm-color-primary-darker: #33cad5;
+  --ifm-color-primary-darkest: #25abb5;
+  --ifm-color-primary-light: #74dbe2;
+  --ifm-color-primary-lighter: #81dee5;
+  --ifm-color-primary-lightest: #a7e8ed;
+}

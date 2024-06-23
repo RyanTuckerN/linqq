@@ -1,4 +1,4 @@
-import { Comparable, Predicate, PredicateWithIndex, Selector } from "../types";
+import { Predicate, PredicateWithIndex, Selector } from "../types";
 import { IEqualityComparer } from "../interfaces";
 import { Exception } from "../validator/exception";
 
@@ -17,23 +17,23 @@ export class Operation {
     return resultSelector ? resultSelector(acc) : (acc as T & TResult);
   }
 
-  public static max<T, TOut extends Comparable>(source: Iterable<T>, selector?: Selector<T, TOut> | undefined): TOut {
+  public static max<T, TOut>(source: Iterable<T>, selector?: Selector<T, TOut> | undefined): TOut {
     let max: TOut | undefined = undefined;
     for (const item of source) {
       const value = selector ? selector(item) : (item as unknown as TOut);
-      if (max === undefined || value > max) max = value;
+      if (max === undefined || max === null || value > max) max = value;
     }
-    if (max === undefined) throw Exception.sequenceEmpty();
+    if (max === undefined || max === null) throw Exception.sequenceEmpty();
     return max;
   }
 
-  public static min<T, TOut extends Comparable>(source: Iterable<T>, selector?: Selector<T, TOut> | undefined): TOut {
+  public static min<T, TOut>(source: Iterable<T>, selector?: Selector<T, TOut> | undefined): TOut {
     let min: TOut | undefined = undefined;
     for (const item of source) {
       const value = selector ? selector(item) : (item as unknown as TOut);
-      if (min === undefined || value < min) min = value;
+      if (min === undefined || min === null || value < min) min = value;
     }
-    if (min === undefined) throw Exception.sequenceEmpty();
+    if (min === undefined || min === null) throw Exception.sequenceEmpty();
     return min;
   }
 

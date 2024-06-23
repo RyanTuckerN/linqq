@@ -1,11 +1,9 @@
 import {
-  Comparable,
   Selector,
   Predicate,
   NumericSelector,
   SelectorWithIndex,
   PredicateWithIndex,
-  OrderSelector,
   Sorter,
   KeyValuePair,
   IEnumerable,
@@ -27,7 +25,30 @@ import { Utils } from "../util";
 import util from "util";
 import { Sort, defaultComparator } from "../operations/sort";
 
+/**
+ * Represents a collection of elements - the main structure of the `linqq` library.
+ * All other classes and methods are built around this class.
+ * Elements can be accessed by index, and the collection can be iterated over, just like an array.
+ * The power of the Enumerable class, however, lies in the methods it provides for querying and manipulating the elements.
+ * Operations like `where`, `select`, `groupBy`, `orderBy`, `join`, and many more are available to transform and filter the elements in the collection.
+ * @typeparam T The type of elements in the collection.
+ */
 export class Enumerable<T> implements IEnumerable<T> {
+  /**
+   * Create an Enumerable from a given iterable. This is the same as calling `linqq(iterable)`.
+   * @param iterable The iterable to create an Enumerable from.
+   * @returns An Enumerable from the given iterable.
+   * @example
+   * ```typescript
+   * const arrSequence = Enumerable.from([1, 2, 3]).toList(); // List { 1, 2, 3 }
+   * const strSequence = Enumerable.from("hello").toList(); // List { "h", "e", "l", "l", "o" }
+   * const mapSequence = Enumerable.from(new Map([["a", 1], ["b", 2]])).toList(); // List { ["a", 1], ["b", 2] }
+   * const setSequence = Enumerable.from(new Set([1, 2, 3])).toList(); // List { 1, 2, 3 }
+   * const linqqSequence = Enumerable.from(arrSequence).toList(); // List { 1, 2, 3 }
+   * function *generator() { yield 1; yield 2; yield 3; }
+   * const genSequence = Enumerable.from(generator()).toList(); // List { 1, 2, 3 }
+   * ```
+   */
   public static from<T>(source: Iterable<T>): IEnumerable<T> {
     if (typeof source === "string" || Array.isArray(source)) return new List<T>(source);
     if (source instanceof Enumerable) return source;
@@ -119,11 +140,11 @@ export class Enumerable<T> implements IEnumerable<T> {
     return Operation.aggregate(this, seed, func, resultSelector);
   }
 
-  max<TOut extends Comparable>(selector?: Selector<T, TOut> | undefined): TOut {
+  max<TOut>(selector?: Selector<T, TOut> | undefined): TOut {
     return Operation.max(this, selector);
   }
 
-  min<TOut extends Comparable>(selector?: Selector<T, TOut> | undefined): TOut {
+  min<TOut>(selector?: Selector<T, TOut> | undefined): TOut {
     return Operation.min(this, selector);
   }
 
@@ -299,31 +320,83 @@ export class Enumerable<T> implements IEnumerable<T> {
     return Operation.sequenceEqual(this, other, comparer);
   }
 
-  orderBy(selector: OrderSelector<T>): IOrderedEnumerable<T> {
+  orderBy<TKey>(selector: Selector<T, TKey>): IOrderedEnumerable<T> {
     return OrderedEnumerable.createOrderedEnumerable(this, [{ selector, descending: false }]);
   }
 
-  orderByDescending(selector: OrderSelector<T>): IOrderedEnumerable<T> {
+  orderByDescending<TKey>(selector: Selector<T, TKey>): IOrderedEnumerable<T> {
     return OrderedEnumerable.createOrderedEnumerable(this, [{ selector, descending: true }]);
   }
 
+  /**
+   * Create an empty Enumerable.
+   * @returns An empty Enumerable.
+   * @example
+   * ```typescript
+   * const empty = Enumerable.empty();
+   * console.log(empty.toArray()); // []
+   * ```
+   */
   public static empty<T>(): IEnumerable<T> {
     return Enumerable.from<T>(Utils.defaultSource());
   }
 
+  /**
+   * Generate a new Enumerable from a given element with the specified count.
+   * It is important to note that the element is repeated by reference.
+   * @param element The element to repeat.
+   * @param count The number of times to repeat the element.
+   * @returns A new Enumerable from a given element with the specified count.
+   * @example
+   * ```typescript
+   * const repeat = Enumerable.repeat(1, 3);
+   * console.log(repeat.toArray()); // [1, 1, 1]
+   * ```
+   */
   public static repeat<T>(element: T, count: number): IEnumerable<T> {
     if (count < 0) return Enumerable.empty<T>();
     count = Math.floor(count);
     return Enumerable.from<T>(Generator.repeat(element, count));
   }
 
+  /**
+   * Create a new Enumerable within the specified range.
+   * @param start The start of the range.
+   * @param count The number of elements in the range.
+   * @returns A new Enumerable within the specified range.
+   * @example
+   * ```typescript
+   * const range = Enumerable.range(1, 5);
+   * console.log(range.toArray()); // [1, 2, 3, 4, 5]
+   * ```
+   */
   public static range(start: number, count: number): IEnumerable<number> {
     (start = Math.floor(start)), (count = Math.floor(count));
     if (count < 0) return Enumerable.empty<number>();
     return Enumerable.from<number>(Generator.range(start, count));
   }
 
-  public static generateFrom<TState, TOut>(
+  /**
+   * Generates a sequence of values starting with the initial value and applying the action to the current value
+   * until the predicate returns false.
+   * @param initial `TState` The initial value.
+   * @param predicate `(state: TState) => boolean` The predicate to determine if the sequence should continue.
+   * @param action `(prevState: TState) => TState` The action to apply to the current value.
+   * @param selector `(TState) => TOut` The selector to transform the current value.
+   * @returns An IEnumerable of values.
+   * @throws If the predicate, selector, or action is null.
+   * @throws If an error occurs during the generation and no error handler is provided.
+   * @example
+   * ```typescript
+   * const sequence = EnumerableOperations.generate(
+   *  1, // x
+   *  (x) => x < 10,
+   *  (x) => x + 1,
+   *  (x) => x * 2)
+   * // sequence: 1, 2, 4, 8, 16, 32, 64, 128, 256, 512
+   * ```
+   */
+  public static generate<TState, TOut>(
     initial: TState,
     predicate: Predicate<TState>,
     action: (state: TState) => TState,
@@ -551,15 +624,15 @@ class SelectManyIterator<TSource, TResult> extends IteratorBase<TSource, TResult
 class OrderedEnumerable<T> extends IteratorBase<T> implements IOrderedEnumerable<T> {
   private index = 0;
   private sorted: T[] | null = null;
-  public static createOrderedEnumerable<T>(
+  public static createOrderedEnumerable<T, TKey>(
     source: Iterable<T>,
-    sortExpressions: Sorter<T>[] = [],
+    sortExpressions: Sorter<T, TKey>[] = [],
   ): IOrderedEnumerable<T> {
     return new OrderedEnumerable<T>(source, sortExpressions);
   }
   constructor(
     source: Iterable<T>,
-    private criteria: Sorter<T>[],
+    private criteria: Sorter<T, any>[],
   ) {
     super(source);
   }

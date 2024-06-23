@@ -1,4 +1,4 @@
-import linq, { IEqualityComparer } from "../src";
+import { linqq as linq, IEqualityComparer } from "../src";
 import {
   IdEqualityComparer,
   ObjectReferenceEqualityComparer,

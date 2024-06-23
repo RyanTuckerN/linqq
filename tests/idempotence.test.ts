@@ -1,6 +1,6 @@
 // tests for idempotence, ie the same request should return the same response (no side effects)
 
-import linq from "../src";
+import { linqq as linq } from "../src";
 import { IEnumerable } from "../src/interfaces/IEnumerable";
 
 type TestType = { id: number; name: string };

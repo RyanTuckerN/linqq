@@ -1,7 +1,10 @@
 import { KeyValuePair } from "../types";
 import { IEnumerable } from "./IEnumerable";
 
-export type Indexable<TKey, TValue> = { [K in TKey extends string ? string : TKey extends number ? number : never]: TValue };
+/**
+ * Represents a generic collection of key/value pairs.
+ * This structure is similar to a js Map, but with the added benefit of extending the IEnumerable interface.
+ */
 export interface IDictionary<TKey, TValue> extends IEnumerable<KeyValuePair<TKey, TValue>> {
     /**
      * Return an iterable of keys in the dictionary.

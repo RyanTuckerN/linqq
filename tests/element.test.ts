@@ -1,5 +1,5 @@
 import { Exception } from "../src/validator/exception";
-import linq from "../src";
+import { linqq as linq } from "../src";
 
 test(" *** Element ***", () => {
   expect(emptyLinqArray).toHaveProperty("first");

@@ -1,4 +1,4 @@
-import linq, { IEnumerable } from "../src";
+import { linqq as linq, IEnumerable } from "../src";
 
 
 

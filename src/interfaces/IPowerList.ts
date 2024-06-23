@@ -2,6 +2,10 @@ import { Comparator, Predicate, Selector } from "../types";
 import { IDictionary } from "./IDictionary";
 import { IList } from "./IList";
 
+/**
+ * Represents a collection of elements that can be manipulated in various ways.
+ * All methods from IList are available, with additional advanced features for sorting, statistics, and other operations.
+ */
 export interface IPowerList<T> extends IList<T> {
   /**
    * Returns an tuple of two Lists, one with elements that match the predicate and one with elements that do not.
@@ -18,7 +22,7 @@ export interface IPowerList<T> extends IList<T> {
    */
   shuffle(): IPowerList<T>;
   /**
-   * Randomizes the order of the elements in the List in place.
+   * Randomizes the order of the elements in the List **in place**.
    * @returns The List after shuffling.
    */
   shuffleInPlace(): this;
@@ -30,7 +34,7 @@ export interface IPowerList<T> extends IList<T> {
    */
   rotate(steps: number): IPowerList<T>;
   /**
-   * Rotates the elements in the List in place by a specified number of steps.
+   * Rotates the elements in the List **in place** by a specified number of steps.
    * Positive steps rotate to the right, negative steps rotate to the left.
    * @param steps The number of steps to rotate the elements.
    * @returns The List after rotating.
@@ -46,7 +50,7 @@ export interface IPowerList<T> extends IList<T> {
    */
   reverseInPlace(): this;
   /**
-   * Transform a List in place by applying a selector function to each element.
+   * Transform a List **in place** by applying a selector function to each element.
    * @param selector A function that accepts an argument; the function to perform on each element of the List.
    */
   transform<TOut>(selector: (element: T, index: number, list: this) => TOut): IPowerList<TOut>;
@@ -107,7 +111,7 @@ export interface IPowerList<T> extends IList<T> {
    */
   sample(count: number): IPowerList<T>;
   /**
-   * Sorts the List in place using the built-in JavaScript sort method.
+   * Sorts the List **in place** using the built-in JavaScript sort method.
    * This method is typically stable, but depends on the browser/runtime implementation.
    * This is often the fastest sorting method as most engines are highly optimized, but it can be slower than quick sort or merge sort.
    * @param comparator A function that accepts two arguments; the function to compare two elements of the List.
@@ -115,7 +119,7 @@ export interface IPowerList<T> extends IList<T> {
   sort(comparator?: Comparator<T>): this;
 
   /**
-   * Sorts the List in place using the merge sort algorithm.
+   * Sorts the List **in place** using the merge sort algorithm.
    * This algorithm is efficient and stable, making it suitable for sorting large datasets and linked lists where random access is costly.
    * Time Complexity: O(n log n) in all cases.
    * @param comparator A function that accepts two arguments; the function to compare two elements of the List.
@@ -124,7 +128,7 @@ export interface IPowerList<T> extends IList<T> {
   mergeSort(comparator?: Comparator<T>): this;
 
   /**
-   * Sorts the List in place using the quick sort algorithm.
+   * Sorts the List **in place** using the quick sort algorithm.
    * QuickSort is very efficient for large datasets but has a worst-case performance of O(n^2). It performs well on average and is generally faster than merge sort in practice.
    * Not stable, which means it might not preserve the order of equal elements.
    * Best used when average-case performance is important.
@@ -134,7 +138,7 @@ export interface IPowerList<T> extends IList<T> {
   quickSort(comparator?: Comparator<T>): this;
 
   /**
-   * Sorts the List in place using the bubble sort algorithm.
+   * Sorts the List **in place** using the bubble sort algorithm.
    * This is one of the simplest sorting algorithms but is inefficient for large datasets with time complexity O(n^2).
    * It is stable and works well with small or mostly sorted datasets.
    * Ideal for educational purposes or when data is already almost sorted.
@@ -144,7 +148,7 @@ export interface IPowerList<T> extends IList<T> {
   bubbleSort(comparator?: Comparator<T>): this;
 
   /**
-   * Sorts the List in place using the insertion sort algorithm.
+   * Sorts the List **in place** using the insertion sort algorithm.
    * Efficient for small data sets or arrays that are already substantially sorted.
    * Stable and has a simple implementation, with O(n^2) complexity in the worst case but can perform much better if the array is nearly sorted.
    * Suitable for data sets that are continuously being added to and need to remain sorted.
@@ -154,7 +158,7 @@ export interface IPowerList<T> extends IList<T> {
   insertionSort(comparator?: Comparator<T>): this;
 
   /**
-   * Sorts the List in place using the selection sort algorithm.
+   * Sorts the List **in place** using the selection sort algorithm.
    * Not suitable for large lists as its average and worst-case complexity are both O(n^2), but it has the property of minimizing the number of swaps.
    * Not stable.
    * Can be useful when memory writes are a costly operation.
@@ -164,7 +168,7 @@ export interface IPowerList<T> extends IList<T> {
   selectionSort(comparator?: Comparator<T>): this;
 
   /**
-   * Sorts the List in place using the heap sort algorithm.
+   * Sorts the List **in place** using the heap sort algorithm.
    * Efficient for both large and small data sets with O(n log n) complexity.
    * Not stable but does not require additional memory for another array like merge sort.
    * Useful when consistent O(n log n) performance is required regardless of data ordering.
@@ -174,7 +178,7 @@ export interface IPowerList<T> extends IList<T> {
   heapSort(comparator?: Comparator<T>): this;
 
   /**
-   * Sorts the List in place using the shell sort algorithm.
+   * Sorts the List **in place** using the shell sort algorithm.
    * Improves on insertion sort by comparing elements far apart and then reducing the gap between elements to be compared.
    * Complexity varies depending on the gap sequence, generally between O(n log n) and O(n^2).
    * Not stable but more efficient than simple insertion on medium-sized lists.
@@ -301,7 +305,7 @@ export interface IPowerList<T> extends IList<T> {
   /**
    * Applies an accumulator function over the elements of the list, returning an IEnumerable of accumulated values at each step.
    * @param seed The initial accumulator value.
-   * @param func An accumulator function to be invoked on each element.
+   * @param accumulator An accumulator function to be invoked on each element.
    */
   scan<TAccumulate>(seed: TAccumulate, accumulator: (acc: TAccumulate, value: T) => TAccumulate): IPowerList<TAccumulate>;
 

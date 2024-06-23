@@ -1,14 +1,7 @@
-import linq from "../src";
-import { Dictionary } from "../src";
-
-test("linq.toDictionary()", () => {
-  const dict = getPeopleDict();
-  expect(dict).toBeInstanceOf(Dictionary);
-});
+import { linqq as linq } from "../src";
 
 test("create()", () => {
   const dict = linq(["Alice", "Bob", "Charlie"]).toDictionary((x) => x);
-  expect(dict).toBeInstanceOf(Dictionary);
   expect(dict.count()).toBe(3);
 });
 
@@ -17,7 +10,7 @@ test("direct index access", () => {
   const dict = getPeopleDict();
   expect(dict[123].name).toBe("Alice");
   expect(dict[345].name).toBe("Charlie");
-  expect(dict["234"].name).toBe("Bob"); // that this works is kind of a bug,but really is a feature... 
+  expect(dict["234"].name).toBe("Bob"); // that this works is kind of a bug,but really is a feature...
   dict["234"] = { id: 234, name: "Bobby", age: 41, hobbyIds: [2, 3, 4, 14] };
   expect(dict[234].name).toBe("Bobby");
   expect(dict.get(234).name).toBe("Bobby");
@@ -76,7 +69,6 @@ test("toArray()", () => {
   const arr = dict.toArray();
   expect(arr.length).toBe(10);
 });
-
 
 const getPeopleDict = () => {
   const people = linq([

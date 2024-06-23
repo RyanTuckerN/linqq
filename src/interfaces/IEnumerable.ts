@@ -1,15 +1,15 @@
-import {
-  Predicate,
-  Orderable,
-  PredicateWithIndex,
-  Selector,
-  NumericSelector,
-  SelectorWithIndex,
-  Comparable,
-} from "../";
-import { IGrouping, IEqualityComparer, IDictionary, IOrderedEnumerable, Indexable, IHashSet, IPowerList } from ".";
+import { Predicate, PredicateWithIndex, Selector, NumericSelector, SelectorWithIndex, Indexable } from "../";
+import { IGrouping, IEqualityComparer, IDictionary, IOrderedEnumerable, IHashSet, IPowerList } from ".";
 import { IList } from "./IList";
 
+/**
+ * Represents a collection of elements - the main interface of the `linqq` library.
+ * All other enumerable interfaces are built around this.
+ * Elements can be accessed by index, and the collection can be iterated over, just like an array.
+ * The power of the IEnumerable, however, lies in the methods it provides for querying and manipulating the elements.
+ * Operations like `where`, `select`, `groupBy`, `orderBy`, `join`, and many more are available to transform and filter the elements in the collection.
+ * @typeparam T The type of elements in the collection.
+ */
 export interface IEnumerable<T> extends Iterable<T> {
   // Transformation
   /**
@@ -40,14 +40,14 @@ export interface IEnumerable<T> extends Iterable<T> {
   toSet(): Set<T>;
   /**
    * Transform the elements in the IEnumerable to a HashSet.
-   * @param comparer (optional) The comparer to use when comparing elements.
+   * @param comparer The comparer to use when comparing elements.
    * @returns A HashSet of the elements in the IEnumerable.
    */
   toHashSet(comparer?: IEqualityComparer<T>): IHashSet<T>;
   /**
    * Transform the elements in the IEnumerable to a Lookup.
    * @param keySelector The key selector to group elements by.
-   * @param valueSelector (optional) The value selector to transform elements with.
+   * @param valueSelector The value selector to transform elements with.
    * @returns A Dictionary of the elements in the IEnumerable.
    */
   toDictionary<TKey, TOut = T>(
@@ -65,7 +65,7 @@ export interface IEnumerable<T> extends Iterable<T> {
    * Perform an aggregation on the elements in the IEnumerable.
    * @param seed The initial value of the accumulator.
    * @param func The function to perform on each element.
-   * @param resultSelector (optional) The function to transform the accumulator into the result.
+   * @param resultSelector The function to transform the accumulator into the result.
    * @returns The result of the aggregation.
    */
   aggregate<TAccumulate, TResult>(
@@ -75,7 +75,7 @@ export interface IEnumerable<T> extends Iterable<T> {
   ): TResult;
   /**
    * Count the elements in the IEnumerable.
-   * @param predicate (optional) The predicate to filter elements with.
+   * @param predicate The predicate to filter elements with.
    * @returns The number of elements in the IEnumerable.
    */
   count(predicate?: Predicate<T>): number;
@@ -98,24 +98,24 @@ export interface IEnumerable<T> extends Iterable<T> {
    * @param selector The selector to transform elements with.
    * @returns The maximum element in the IEnumerable.
    */
-  max<TOut extends Comparable>(selector?: Selector<T, TOut>): TOut;
+  max<TOut>(selector?: Selector<T, TOut>): TOut;
   /**
    * Find the minimum element in the IEnumerable.
    * @param selector The selector to transform elements with.
    * @returns The minimum element in the IEnumerable.
    */
-  min<TOut extends Comparable>(selector?: Selector<T, TOut>): TOut;
+  min<TOut>(selector?: Selector<T, TOut>): TOut;
 
   // Quantifiers
   /**
    * Check if any elements in the IEnumerable satisfy the predicate.
-   * @param predicate (optional) The predicate to check elements with.
+   * @param predicate The predicate to check elements with.
    * @returns True if any elements satisfy the predicate, otherwise false.
    */
   any(predicate?: Predicate<T>): boolean;
   /**
    * Check if all elements in the IEnumerable satisfy the predicate.
-   * @param predicate (optional) The predicate to check elements with.
+   * @param predicate The predicate to check elements with.
    * @returns True if all elements satisfy the predicate, otherwise false.
    */
   all(predicate: Predicate<T>): boolean;
@@ -142,33 +142,33 @@ export interface IEnumerable<T> extends Iterable<T> {
   elementAtOrDefault(index: number): T | undefined;
   /**
    * Get the first element in the IEnumerable.
-   * @param predicate (optional) The predicate to filter elements with.
+   * @param predicate The predicate to filter elements with.
    * @returns The first element in the IEnumerable.
    * @throws If the IEnumerable is empty.
    */
   first(predicate?: Predicate<T>): T;
   /**
    * Get the first element in the IEnumerable or the undefined.
-   * @param predicate (optional) The predicate to filter elements with.
+   * @param predicate The predicate to filter elements with.
    * @returns The first element in the IEnumerable or the undefined.
    */
   firstOrDefault(predicate?: Predicate<T>): T | undefined;
   /**
    * Get the last element in the IEnumerable.
-   * @param predicate (optional) The predicate to filter elements with.
+   * @param predicate The predicate to filter elements with.
    * @returns The last element in the IEnumerable.
    * @throws If the IEnumerable is empty.
    */
   last(predicate?: Predicate<T>): T;
   /**
    * Get the last element in the IEnumerable or the undefined.
-   * @param predicate (optional) The predicate to filter elements with.
+   * @param predicate The predicate to filter elements with.
    * @returns The last element in the IEnumerable or the undefined.
    */
   lastOrDefault(predicate?: Predicate<T>): T | undefined;
   /**
    * Get the single element in the IEnumerable.
-   * @param predicate (optional) The predicate to filter elements with.
+   * @param predicate The predicate to filter elements with.
    * @returns The single element in the IEnumerable.
    * @throws If the IEnumerable is empty.
    * @throws If the IEnumerable contains more than one element.
@@ -176,7 +176,7 @@ export interface IEnumerable<T> extends Iterable<T> {
   single(predicate?: Predicate<T>): T;
   /**
    * Get the single element in the IEnumerable or the undefined.
-   * @param predicate (optional) The predicate to filter elements with.
+   * @param predicate The predicate to filter elements with.
    * @returns The single element in the IEnumerable or the undefined.
    * @throws If the IEnumerable contains more than one element.
    */
@@ -218,7 +218,7 @@ export interface IEnumerable<T> extends Iterable<T> {
    * @param outerKeySelector The key selector for the outer sequence.
    * @param innerKeySelector The key selector for the inner sequence.
    * @param resultSelector The result selector for the joined sequences.
-   * @param comparer (optional) The comparer to compare keys with.
+   * @param comparer The comparer to compare keys with.
    * @returns A new IEnumerable with the joined sequences.
    */
   join<TInner, TKey, TOut>(
@@ -234,7 +234,7 @@ export interface IEnumerable<T> extends Iterable<T> {
    * @param outerKeySelector The key selector for the outer sequence.
    * @param innerKeySelector The key selector for the inner sequence.
    * @param resultSelector The result selector for the grouped sequences.
-   * @param comparer (optional) The comparer to compare keys with.
+   * @param comparer The comparer to compare keys with.
    * @returns A new IEnumerable with the grouped sequences.
    */
   groupJoin<TInner, TKey, TOut>(
@@ -249,13 +249,13 @@ export interface IEnumerable<T> extends Iterable<T> {
    * @param selector The key selector to order elements by.
    * @returns A new IOrderedEnumerable with the elements ordered.
    */
-  orderBy(selector: (x: T) => Orderable): IOrderedEnumerable<T>;
+  orderBy<TKey>(selector: Selector<T, TKey>): IOrderedEnumerable<T>;
   /**
    * Order elements in the IEnumerable by a key selector in descending order.
    * @param selector The key selector to order elements by.
    * @returns A new IOrderedEnumerable with the elements ordered.
    */
-  orderByDescending(selector: (x: T) => Orderable): IOrderedEnumerable<T>;
+  orderByDescending<TKey>(selector: Selector<T, TKey>): IOrderedEnumerable<T>;
   /**
    *  Take a specified number of elements from the IEnumerable.
    * @param count The number of elements to take.
@@ -309,29 +309,29 @@ export interface IEnumerable<T> extends Iterable<T> {
   /**
    * Union two sequences into an IEnumerable of unique elements.
    * @param other The sequence to union with.
-   * @param comparer (optional) The comparer to compare elements with.
+   * @param comparer The comparer to compare elements with.
    * @returns A new IEnumerable with the sequences combined.
    */
   union(other: T[] | IEnumerable<T>, comparer?: IEqualityComparer<T>): IEnumerable<T>;
   /**
    * Intersect two sequences into an IEnumerable of common elements.
    * @param other The sequence to intersect with.
-   * @param comparer (optional) The comparer to compare elements with.
+   * @param comparer The comparer to compare elements with.
    * @returns A new IEnumerable with the sequences intersected.
    */
   intersect(other: T[] | IEnumerable<T>, comparer?: IEqualityComparer<T>): IEnumerable<T>;
   /**
    * Take the elements in the IEnumerable except for the specified elements.
    * @param other The elements to exclude.
-   * @param comparer (optional) The comparer to compare elements with.
+   * @param comparer The comparer to compare elements with.
    * @returns A new IEnumerable with the elements except for the specified elements.
    */
   except(other: T[] | IEnumerable<T>, comparer?: IEqualityComparer<T>): IEnumerable<T>;
   /**
    * Group elements into a sequence of Groupings based on a key selector.
    * @param keySelector The key selector to group elements by.
-   * @param elementSelector (optional) The element selector to transform elements with.
-   * @param comparer (optional) The comparer to compare keys with.
+   * @param elementSelector The element selector to transform elements with.
+   * @param comparer The comparer to compare keys with.
    * @returns Am IEnumerable of Groupings.
    */
   groupBy<TKey, TNext = T>(
@@ -340,6 +340,11 @@ export interface IEnumerable<T> extends Iterable<T> {
     comparer?: IEqualityComparer<TKey>,
   ): IEnumerable<IGrouping<TKey, T>>;
 
+  /**
+   * Check if the elements in the IEnumerable are equal to the elements in another sequence.
+   * @param other The other sequence to compare.
+   * @param comparer The comparer to compare elements with.
+   */
   sequenceEqual(other: Iterable<T>, comparer?: IEqualityComparer<T>): boolean;
 
   [Symbol.iterator](): IterableIterator<T>;

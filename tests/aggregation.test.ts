@@ -1,4 +1,4 @@
-import linq from "../src";
+import { linqq as linq } from "../src";
 
 test(" *** Aggregation/Reduction ***", () => {
   expect(emptyLinqArray).toHaveProperty("aggregate");

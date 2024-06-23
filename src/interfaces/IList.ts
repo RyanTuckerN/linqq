@@ -1,7 +1,9 @@
 import { IEnumerable } from ".";
 
 /**
- * Represents a list of elements that can be accessed by index.
+ * Represents a list of elements that can be accessed by index. 
+ * All methods from IEnumerable are available, with additional methods for adding, removing, and modifying elements.
+ * @template T The type of elements in the list.
  */
 export interface IList<T> extends IEnumerable<T> {
   /**

@@ -25,7 +25,7 @@ cp -r doc/build/* gh-pages/
 echo "Deploying to GitHub Pages..."
 cd gh-pages
 git add .
-git commit -m "Update documentation site"; then
+git commit -m "Update documentation site";
 git push origin gh-pages
 echo "Deployment complete!"
 

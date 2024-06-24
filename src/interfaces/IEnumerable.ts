@@ -15,16 +15,34 @@ export interface IEnumerable<T> extends Iterable<T> {
   /**
    * Transform the elements in the IEnumerable to an array.
    * @returns An array of the elements in the IEnumerable.
+   * @example 
+   * ```typescript
+   * const numbers = [1, 2, 3, 4, 5];
+   * const enumerable = linqq(numbers).select(x => x * 2);
+   * const array = enumerable.toArray() // [2, 4, 6, 8, 10]
+   * // the sequence is enumerated, and array methods can be used 
+   * array.push(12);
+   * array.shift();
+   * ```
    */
   toArray(): T[];
   /**
-   * Transform the elements in the IEnumerable to a List.
-   * @returns A List of the elements in the IEnumerable.
+   * Transform the elements in the IEnumerable to an IList.
+   * @returns An IList of the elements in the IEnumerable.
+   * @example
+   * ```typescript
+   * const numbers = [1, 2, 3, 4, 5];
+   * const enumerable = linqq(numbers).select(x => x * 2);
+   * const list = enumerable.toList() // List { 2, 4, 6, 8, 10 }
+   * // the sequence is enumerated, and list methods can be used
+   * list.add(12);
+   * list.removeAt(0);
+   * ```
    */
   toList(): IList<T>;
   /**
    * Transform the elements in the IEnumerable to an PowerList.
-   * A PowerList is a List with additional many additional methods, ranging from partitioning, advanced aggregation, and math operations.
+   * A PowerList is a List with many additional methods, ranging from partitioning, advanced aggregation, and math operations.
    * @returns A PowerList of the elements in the IEnumerable.
    */
   toPowerList(): IPowerList<T>;

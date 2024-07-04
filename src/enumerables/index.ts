@@ -100,7 +100,7 @@ export class Enumerable<T> implements IEnumerable<T> {
 
   where(predicate: Predicate<T> | PredicateWithIndex<T>): IEnumerable<T> {
     if (!predicate) throw Exception.argumentNull("predicate");
-    if (predicate.length > 1) return new Enumerable<T>(Generator.where(this, predicate));
+    if (predicate.length > 1) return new GeneratorIterator<T>(() => Generator.where(this, predicate));
     let iterable: IEnumerable<T> | any;
     if (Array.isArray(this.source)) {
       iterable = new WhereArrayIterator(this.source, predicate as Predicate<T>);
@@ -234,7 +234,7 @@ export class Enumerable<T> implements IEnumerable<T> {
   }
 
   reverse(): IEnumerable<T> {
-    return Enumerable.from(Generator.reverse(this));
+    return new GeneratorIterator(() => Generator.reverse(this));
   }
 
   append(element: T): IEnumerable<T> {
@@ -255,57 +255,57 @@ export class Enumerable<T> implements IEnumerable<T> {
 
   take(count: number): IEnumerable<T> {
     if (count < 0) count = 0;
-    return Enumerable.from(Generator.take(this, count));
+    return new GeneratorIterator(() => Generator.take(this, count));
   }
 
   takeWhile(predicate: PredicateWithIndex<T>): IEnumerable<T> {
     if (!predicate) throw Exception.argumentNull("predicate");
-    return Enumerable.from(Generator.takeWhile(this, predicate));
+    return new GeneratorIterator(() => Generator.takeWhile(this, predicate));
   }
 
   skip(count: number): IEnumerable<T> {
     count = Math.floor(count);
     if (count < 0) count = 0;
-    return Enumerable.from(Generator.skip(this, count));
+    return new GeneratorIterator(() => Generator.skip(this, count));
   }
 
   skipWhile(predicate: PredicateWithIndex<T>): IEnumerable<T> {
     if (!predicate) throw Exception.argumentNull("predicate");
-    return Enumerable.from(Generator.skipWhile(this, predicate));
+    return new GeneratorIterator(() => Generator.skipWhile(this, predicate));
   }
 
   distinct(): IEnumerable<T> {
-    return Enumerable.from(Generator.distinct(this));
+    return new GeneratorIterator(() => Generator.distinct(this));
   }
 
   distinctBy<TOut>(selector: Selector<T, TOut>): IEnumerable<T> {
     if (!selector) throw Exception.argumentNull("selector");
-    return Enumerable.from(Generator.distinctBy(this, selector));
+    return new GeneratorIterator(() => Generator.distinctBy(this, selector));
   }
 
   union(other: IEnumerable<T> | T[], comparer?: IEqualityComparer<T>): IEnumerable<T> {
-    return Enumerable.from(Generator.union(this, other, comparer));
+    return new GeneratorIterator(() => Generator.union(this, other, comparer));
   }
 
   intersect(other: IEnumerable<T> | T[], comparer: IEqualityComparer<T>): IEnumerable<T> {
     if (!other) throw Exception.argumentNull("other");
-    return Enumerable.from(Generator.intersect(this, other, comparer));
+    return new GeneratorIterator(() => Generator.intersect(this, other, comparer));
   }
 
   except(other: IEnumerable<T> | T[], comparer: IEqualityComparer<T>): IEnumerable<T> {
     if (!other) throw Exception.argumentNull("other");
-    return Enumerable.from(Generator.except(this, other, comparer));
+    return new GeneratorIterator(() => Generator.except(this, other, comparer));
   }
 
   concat(...args: Iterable<T>[]): IEnumerable<T> {
     if (!args.length) throw Exception.argumentNull("args");
-    return Enumerable.from(Generator.concat(this, ...args));
+    return new GeneratorIterator(() => Generator.concat(this, ...args));
   }
 
   zip<TOut, TSecond = T>(second: Iterable<TSecond>, selector: (f: T, s: TSecond) => TOut): IEnumerable<TOut> {
     if (!second) throw Exception.argumentNull("second");
     if (!selector) throw Exception.argumentNull("selector");
-    return Enumerable.from(Generator.zip(this, second, selector));
+    return new GeneratorIterator(() => Generator.zip(this, second, selector));
   }
 
   groupBy<TKey, TNext = T>(
@@ -356,7 +356,7 @@ export class Enumerable<T> implements IEnumerable<T> {
   public static repeat<T>(element: T, count: number): IEnumerable<T> {
     if (count < 0) return Enumerable.empty<T>();
     count = Math.floor(count);
-    return Enumerable.from<T>(Generator.repeat(element, count));
+    return new GeneratorIterator<T>(() => Generator.repeat(element, count));
   }
 
   /**
@@ -373,7 +373,7 @@ export class Enumerable<T> implements IEnumerable<T> {
   public static range(start: number, count: number): IEnumerable<number> {
     (start = Math.floor(start)), (count = Math.floor(count));
     if (count < 0) return Enumerable.empty<number>();
-    return Enumerable.from<number>(Generator.range(start, count));
+    return new GeneratorIterator<number>(() => Generator.range(start, count));
   }
 
   /**
@@ -405,7 +405,7 @@ export class Enumerable<T> implements IEnumerable<T> {
     if (!predicate) throw Exception.argumentNull("predicate");
     if (!selector) throw Exception.argumentNull("selector");
     if (!action) throw Exception.argumentNull("action");
-    return Enumerable.from<TOut>(Generator.generateFrom({ initial, predicate, selector, action }));
+    return new GeneratorIterator<TOut>(() => Generator.generateFrom({ initial, predicate, selector, action }));
   }
 }
 
@@ -446,6 +446,23 @@ abstract class IteratorBase<TSource, TNext extends any = TSource> extends Enumer
   }
 
   public abstract moveNext(): boolean;
+}
+
+class GeneratorIterator<T> extends IteratorBase<T> {
+  constructor(private getSource: () => Iterable<T>) {
+    super(getSource());
+  }
+
+  public moveNext(): boolean {
+    const result = this.sourceIterator.next();
+    if (result.done) return false;
+    this.current = result.value;
+    return true;
+  }
+
+  public clone(): GeneratorIterator<T> {
+    return new GeneratorIterator(this.getSource);
+  }
 }
 
 class WhereIterator<TSource> extends IteratorBase<TSource> {

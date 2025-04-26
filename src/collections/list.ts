@@ -7,6 +7,7 @@ import type { IEnumerable } from "@interfaces/IEnumerable";
 import type { IList } from "@interfaces/IList";
 import type { IExtendedList } from "@interfaces/IExtendedList";
 import type { Comparator, Selector, Predicate, PredicateWithIndex, NumericSelector } from "src/types";
+import { Dictionary } from "./dictionary";
 
 export class List<T> extends EnumerableBase<T> implements IExtendedList<T> {
   constructor(protected source: T[]) {
@@ -163,11 +164,10 @@ export class List<T> extends EnumerableBase<T> implements IExtendedList<T> {
     return List.from(this.source.slice(pageSize * (pageNumber - 1), pageSize * pageNumber));
   }
   frequencies(): IDictionary<T, number> {
-    // return this.aggregate(Dictionary.fromMap(new Map()), (acc, x) => {
-    //   acc.set(x, (acc.containsKey(x) ? acc.get(x) : 0) + 1);
-    //   return acc;
-    // });
-    throw new Error("Not implemented");
+    return this.aggregate(Dictionary.fromMap(new Map()), (acc, x) => {
+      acc.set(x, (acc.containsKey(x) ? acc.get(x) : 0) + 1);
+      return acc;
+    });
   }
   top(n: number, comparator: Comparator<T> = defaultComparator): IExtendedList<T> {
     return List.from(this.source.slice().sort(comparator).slice(0, n));

@@ -2,6 +2,7 @@ import { IteratorBase } from "@core/enumerable-base";
 import { IEnumerable } from "@interfaces/IEnumerable";
 import { Predicate, PredicateWithIndex } from "src/types";
 import { Utils } from "src/util";
+import { WhereSelectIterator } from "./where-select-iterator";
 
 export class WhereIterator<TSource> extends IteratorBase<TSource> {
   constructor(
@@ -31,7 +32,7 @@ export class WhereIterator<TSource> extends IteratorBase<TSource> {
     return new WhereIterator(this.source, Utils.combinePredicates(this._predicate, predicate as Predicate<TSource>));
   }
 
-  // public override select<TOut>(selector: (x: TSource, i: number) => TOut): IEnumerable<TOut> {
-  //   return Utils.cast<IEnumerable<TOut>>(new WhereSelectIterator(this.source, this._predicate, selector));
-  // }
+  public override select<TOut>(selector: (x: TSource, i: number) => TOut): IEnumerable<TOut> {
+    return Utils.cast<IEnumerable<TOut>>(new WhereSelectIterator(this.source, this._predicate, selector));
+  }
 }

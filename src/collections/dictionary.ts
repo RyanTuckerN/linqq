@@ -111,7 +111,8 @@ export class Dictionary<TK, TV, TPrev = TV>
 
   public tryGetValue(key: TK): [true, TV] | [false, undefined] {
     const hasKey = this.map.has(key);
-    return [hasKey, hasKey ? this.map.get(key) : undefined] as any;
+    if (hasKey) return [true, this.map.get(key)!];
+    return [false, undefined];
   }
 
   public static createDictionary<TSource, TKey, TValue>(

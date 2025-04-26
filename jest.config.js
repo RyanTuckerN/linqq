@@ -16,6 +16,7 @@ module.exports = {
     "^@collections/(.*)$": "<rootDir>/src/collections/$1",
     "^@factories/(.*)$": "<rootDir>/src/factories/$1",
     "^@interfaces/(.*)$": "<rootDir>/src/interfaces/$1",
+    "^@interfaces": "<rootDir>/src/interfaces/index.ts",
     "^@iterators/(.*)$": "<rootDir>/src/iterators/$1",
     "^@operations/(.*)$": "<rootDir>/src/operations/$1",
     "^@util/(.*)$": "<rootDir>/src/util/$1",

@@ -19,42 +19,158 @@ function isIdempotent(expression: (obj: IEnumerable<TestType>) => any) {
   };
 }
 
-test("distinct()", isIdempotent((x) => x.distinct()));
-test("distinct()", isIdempotent((x) => x.distinct()));
-test("toList()", isIdempotent((x) => x.toList()));
-test("toList()", isIdempotent((x) => x.toList()));
-test("toDictionary()", isIdempotent((x) => x.toDictionary(x => x.id)));
-test("toDictionary()", isIdempotent((x) => x.toDictionary(x => x.id)));
-test("orderBy()", isIdempotent((x) => x.orderBy(x => x.id)));
-test("orderBy()", isIdempotent((x) => x.orderBy(x => x.id)));
-test("skipWhile()", isIdempotent((x) => x.skipWhile(x => x.id > 1)));
-test("skipWhile()", isIdempotent((x) => x.skipWhile(x => x.id > 1)));
+test(
+  "distinct()",
+  isIdempotent((x) => x.distinct()),
+);
+test(
+  "distinct()",
+  isIdempotent((x) => x.distinct()),
+);
+test(
+  "toList()",
+  isIdempotent((x) => x.toList()),
+);
+test(
+  "toList()",
+  isIdempotent((x) => x.toList()),
+);
+test(
+  "toDictionary()",
+  isIdempotent((x) => x.toDictionary((x) => x.id)),
+);
+test(
+  "toDictionary()",
+  isIdempotent((x) => x.toDictionary((x) => x.id)),
+);
+test(
+  "orderBy()",
+  isIdempotent((x) => x.orderBy((x) => x.id)),
+);
+test(
+  "orderBy()",
+  isIdempotent((x) => x.orderBy((x) => x.id)),
+);
+test(
+  "skipWhile()",
+  isIdempotent((x) => x.skipWhile((x) => x.id > 1)),
+);
+test(
+  "skipWhile()",
+  isIdempotent((x) => x.skipWhile((x) => x.id > 1)),
+);
 
-test("where()", isIdempotent((x) => x.where(x => x.id > 1)));
-test("where()", isIdempotent((x) => x.where(x => x.id > 1)));
-test("orderByDescending()", isIdempotent((x) => x.orderByDescending(x => x.id)));
-test("orderByDescending()", isIdempotent((x) => x.orderByDescending(x => x.id)));
-test("take()", isIdempotent((x) => x.take(2)));
-test("take()", isIdempotent((x) => x.take(2)));
-test("takeWhile()", isIdempotent((x) => x.takeWhile(x => x.id > 1)));
-test("takeWhile()", isIdempotent((x) => x.takeWhile(x => x.id > 1)));
-test("skip()", isIdempotent((x) => x.skip(2)));
-test("skip()", isIdempotent((x) => x.skip(2)));
+test(
+  "where()",
+  isIdempotent((x) => x.where((x) => x.id > 1)),
+);
+test(
+  "where()",
+  isIdempotent((x) => x.where((x) => x.id > 1)),
+);
+test(
+  "orderByDescending()",
+  isIdempotent((x) => x.orderByDescending((x) => x.id)),
+);
+test(
+  "orderByDescending()",
+  isIdempotent((x) => x.orderByDescending((x) => x.id)),
+);
+test(
+  "take()",
+  isIdempotent((x) => x.take(2)),
+);
+test(
+  "take()",
+  isIdempotent((x) => x.take(2)),
+);
+test(
+  "takeWhile()",
+  isIdempotent((x) => x.takeWhile((x) => x.id > 1)),
+);
+test(
+  "takeWhile()",
+  isIdempotent((x) => x.takeWhile((x) => x.id > 1)),
+);
+test(
+  "skip()",
+  isIdempotent((x) => x.skip(2)),
+);
+test(
+  "skip()",
+  isIdempotent((x) => x.skip(2)),
+);
 
-test("groupBy()", isIdempotent((x) => x.groupBy(x => x.id).select(g => g.toArray())));
-test("groupBy()", isIdempotent((x) => x.groupBy(x => x.id).select(g => g.toArray())));
-test("groupJoin()", isIdempotent((x) => x.groupJoin(x, x => x.id, x => x.id, (a, b) => a)));
-test("groupJoin()", isIdempotent((x) => x.groupJoin(x, x => x.id, x => x.id, (a, b) => a)));
-test("intersect()", isIdempotent((x) => x.intersect(x)));
-test("intersect()", isIdempotent((x) => x.intersect(x)));
-test("except()", isIdempotent((x) => x.except(x)));
-test("except()", isIdempotent((x) => x.except(x)));
-test("concat()", isIdempotent((x) => x.concat(x)));
-test("concat()", isIdempotent((x) => x.concat(x)));
-test("union()", isIdempotent((x) => x.union(x)));
-test("union()", isIdempotent((x) => x.union(x)));
-test("reverse()", isIdempotent((x) => x.reverse()));
-test("reverse()", isIdempotent((x) => x.reverse()));
+test(
+  "groupBy()",
+  isIdempotent((x) => x.groupBy((x) => x.id).select((g) => g.toArray())),
+);
+test(
+  "groupBy()",
+  isIdempotent((x) => x.groupBy((x) => x.id).select((g) => g.toArray())),
+);
+test(
+  "groupJoin()",
+  isIdempotent((x) =>
+    x.groupJoin(
+      x,
+      (x) => x.id,
+      (x) => x.id,
+      (a, b) => a,
+    ),
+  ),
+);
+test(
+  "groupJoin()",
+  isIdempotent((x) =>
+    x.groupJoin(
+      x,
+      (x) => x.id,
+      (x) => x.id,
+      (a, b) => a,
+    ),
+  ),
+);
+test(
+  "intersect()",
+  isIdempotent((x) => x.intersect(x)),
+);
+test(
+  "intersect()",
+  isIdempotent((x) => x.intersect(x)),
+);
+test(
+  "except()",
+  isIdempotent((x) => x.except(x)),
+);
+test(
+  "except()",
+  isIdempotent((x) => x.except(x)),
+);
+test(
+  "concat()",
+  isIdempotent((x) => x.concat(x)),
+);
+test(
+  "concat()",
+  isIdempotent((x) => x.concat(x)),
+);
+test(
+  "union()",
+  isIdempotent((x) => x.union(x)),
+);
+test(
+  "union()",
+  isIdempotent((x) => x.union(x)),
+);
+test(
+  "reverse()",
+  isIdempotent((x) => x.reverse()),
+);
+test(
+  "reverse()",
+  isIdempotent((x) => x.reverse()),
+);
 
 function elementOperationIsIdempotent(expression: (obj: IEnumerable<TestType>) => any) {
   return () => {
@@ -70,13 +186,43 @@ function elementOperationIsIdempotent(expression: (obj: IEnumerable<TestType>) =
     expect(data).toEqual(source.toArray());
   };
 }
-test("first()", elementOperationIsIdempotent((x) => x.first()));
-test("first()", elementOperationIsIdempotent((x) => x.first()));
-test("last()", elementOperationIsIdempotent((x) => x.last()));
-test("last()", elementOperationIsIdempotent((x) => x.last()));
-test("single()", elementOperationIsIdempotent((x) => x.single(x => x.id === 1)));
-test("single()", elementOperationIsIdempotent((x) => x.single(x => x.id === 1)));
-test("elementAt()", elementOperationIsIdempotent((x) => x.elementAt(1)));
-test("elementAt()", elementOperationIsIdempotent((x) => x.elementAt(1)));
-test("elementAtOrDefault()", elementOperationIsIdempotent((x) => x.elementAtOrDefault(1)));
-test("elementAtOrDefault()", elementOperationIsIdempotent((x) => x.elementAtOrDefault(1)));
+test(
+  "first()",
+  elementOperationIsIdempotent((x) => x.first()),
+);
+test(
+  "first()",
+  elementOperationIsIdempotent((x) => x.first()),
+);
+test(
+  "last()",
+  elementOperationIsIdempotent((x) => x.last()),
+);
+test(
+  "last()",
+  elementOperationIsIdempotent((x) => x.last()),
+);
+test(
+  "single()",
+  elementOperationIsIdempotent((x) => x.single((x) => x.id === 1)),
+);
+test(
+  "single()",
+  elementOperationIsIdempotent((x) => x.single((x) => x.id === 1)),
+);
+test(
+  "elementAt()",
+  elementOperationIsIdempotent((x) => x.elementAt(1)),
+);
+test(
+  "elementAt()",
+  elementOperationIsIdempotent((x) => x.elementAt(1)),
+);
+test(
+  "elementAtOrDefault()",
+  elementOperationIsIdempotent((x) => x.elementAtOrDefault(1)),
+);
+test(
+  "elementAtOrDefault()",
+  elementOperationIsIdempotent((x) => x.elementAtOrDefault(1)),
+);

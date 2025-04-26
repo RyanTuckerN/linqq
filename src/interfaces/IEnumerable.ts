@@ -1,5 +1,5 @@
-import { Predicate, PredicateWithIndex, Selector, NumericSelector, SelectorWithIndex, Indexable } from "../";
-import { IGrouping, IEqualityComparer, IDictionary, IOrderedEnumerable, IHashSet, IPowerList } from ".";
+import { Predicate, PredicateWithIndex, Selector, NumericSelector, SelectorWithIndex, Indexable } from "../types";
+import { IGrouping, IEqualityComparer, IDictionary, IOrderedEnumerable, IHashSet, IExtendedList } from ".";
 import { IList } from "./IList";
 
 /**
@@ -15,12 +15,12 @@ export interface IEnumerable<T> extends Iterable<T> {
   /**
    * Transform the elements in the IEnumerable to an array.
    * @returns An array of the elements in the IEnumerable.
-   * @example 
+   * @example
    * ```typescript
    * const numbers = [1, 2, 3, 4, 5];
    * const enumerable = linqq(numbers).select(x => x * 2);
    * const array = enumerable.toArray() // [2, 4, 6, 8, 10]
-   * // the sequence is enumerated, and array methods can be used 
+   * // the sequence is enumerated, and array methods can be used
    * array.push(12);
    * array.shift();
    * ```
@@ -41,11 +41,11 @@ export interface IEnumerable<T> extends Iterable<T> {
    */
   toList(): IList<T>;
   /**
-   * Transform the elements in the IEnumerable to an PowerList.
-   * A PowerList is a List with many additional methods, ranging from partitioning, advanced aggregation, and math operations.
-   * @returns A PowerList of the elements in the IEnumerable.
+   * Transform the elements in the IEnumerable to an ExtendedList.
+   * A ExtendedList is a List with many additional methods, ranging from partitioning, advanced aggregation, and math operations.
+   * @returns A ExtendedList of the elements in the IEnumerable.
    */
-  toPowerList(): IPowerList<T>;
+  toExtendedList(): IExtendedList<T>;
   /**
    * Transform the elements in the IEnumerable to a List.
    * @returns A List of the elements in the IEnumerable.

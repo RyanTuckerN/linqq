@@ -1,6 +1,5 @@
 import { linqq as linq } from "../src";
 
-
 // *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** ***
 // Partitioning
 // *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** ***
@@ -79,7 +78,6 @@ test("pagination -> skip() and take()", () => {
   expect(linq(numsArray).skip(2).take(10).toArray()).toEqual([3, 4, 5]);
   expect(linq(numsArray).skip(10).take(10).toArray()).toEqual([]);
 });
-
 
 const emptyLinqArray = linq([]);
 const numsArray = [1, 2, 3, 4, 5];

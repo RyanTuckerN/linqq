@@ -1,6 +1,6 @@
 # linqq
 
-*Why use arrays when you can use **linqq**?*
+_Why use arrays when you can use **linqq**?_
 
 ## Usage
 
@@ -90,7 +90,7 @@ declare global {
   }
 }
 
-Array.prototype.toEnumerable = function() {
+Array.prototype.toEnumerable = function () {
   return linqq(this);
 };
 ```
@@ -119,15 +119,14 @@ declare global {
   }
 }
 
-Set.prototype.toEnumerable = function() {
+Set.prototype.toEnumerable = function () {
   return linqq(this);
 };
 
-Map.prototype.toEnumerable = function() {
+Map.prototype.toEnumerable = function () {
   return linqq(this);
 };
 ```
-
 
 ## API
 
@@ -173,14 +172,11 @@ export const Users = ({ users }) => (
             {group
               .orderBy((user) => user.name)
               .select((user) => <li key={user.id}>{user.name}</li>)
-              .toList()
-            }
+              .toList()}
           </ul>
         </section>
       ))
-      .toList()
-    }
+      .toList()}
   </main>
 );
 ```
-

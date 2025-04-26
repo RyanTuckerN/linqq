@@ -1,5 +1,5 @@
-import { HashSet } from "../enumerables";
-import { IEqualityComparer, IList } from "../interfaces";
+import { createHashSet as hashSet } from "@factories/collection-factory";
+import { IEqualityComparer } from "@interfaces/IEqualityComparer";
 import { PredicateWithIndex, Selector, Predicate } from "../types";
 
 export class Generator {
@@ -70,9 +70,9 @@ export class Generator {
   }
 
   public static *union<T>(source: Iterable<T>, other: Iterable<T>, comparer?: IEqualityComparer<T>) {
-    let set: Set<T>;
+    let set: { values: () => Iterable<T> };
     if (comparer) {
-      set = new HashSet<T>([...source, ...other], comparer);
+      set = hashSet<T>([...source, ...other], comparer);
     } else {
       set = new Set<T>([...source, ...other]);
     }
@@ -80,9 +80,9 @@ export class Generator {
   }
 
   public static *intersect<T>(source: Iterable<T>, other: Iterable<T>, comparer?: IEqualityComparer<T>): Iterable<T> {
-    let set: Set<T>;
+    let set: { values: () => Iterable<T>; has: (item: T) => boolean };
     if (comparer) {
-      set = new HashSet<T>(other, comparer);
+      set = hashSet<T>(other, comparer);
     } else {
       set = new Set<T>(other);
     }
@@ -91,9 +91,9 @@ export class Generator {
     }
   }
   public static *except<T>(source: Iterable<T>, other: Iterable<T>, comparer?: IEqualityComparer<T>): Iterable<T> {
-    let set: Set<T>;
+    let set: { values: () => Iterable<T>; has: (item: T) => boolean };
     if (comparer) {
-      set = new HashSet<T>(other, comparer);
+      set = hashSet<T>(other, comparer);
     } else {
       set = new Set<T>(other);
     }

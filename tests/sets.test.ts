@@ -236,9 +236,7 @@ test("toMap() - equality comparer", () => {
     { id: 1, name: "Alice" },
     { id: 2, name: "Bob" },
   ];
-  const map = linq(arr)
-    .toHashSet(new IdEqualityComparer())
-    .toMap();
+  const map = linq(arr).toHashSet(new IdEqualityComparer()).toMap();
   expect(map).toBeInstanceOf(Map);
   expect(map.size).toBe(2);
   expect(map.get("1")).toEqual({ id: 1, name: "Alice" });
@@ -250,9 +248,7 @@ test("toMap() - reference equality", () => {
     { id: 1, name: "Alice" },
     { id: 2, name: "Bob" },
   ];
-  const map = linq(arr)
-    .toHashSet(new ObjectReferenceEqualityComparer())
-    .toMap();
+  const map = linq(arr).toHashSet(new ObjectReferenceEqualityComparer()).toMap();
   expect(map).toBeInstanceOf(Map);
   expect(map.size).toBe(2);
   expect(map.get("hash_1")).toEqual({ id: 1, name: "Alice" });

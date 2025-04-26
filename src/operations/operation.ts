@@ -1,5 +1,5 @@
 import { Predicate, PredicateWithIndex, Selector } from "../types";
-import { IEqualityComparer } from "../interfaces";
+import { IEqualityComparer } from "@interfaces/IEqualityComparer";
 import { Exception } from "../validator/exception";
 
 export class Operation {

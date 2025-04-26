@@ -12,7 +12,6 @@ test("groupBy()", () => {
   expect(admins.count()).toBe(4);
 });
 
-
 enum AccessLevel {
   Guest = 0,
   User = 1,

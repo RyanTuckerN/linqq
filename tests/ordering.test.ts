@@ -1,7 +1,5 @@
 import { linqq as linq, IEnumerable } from "../src";
 
-
-
 test(" *** Sorting ***", () => {
   expect(emptyLinqArray).toHaveProperty("orderBy");
   expect(emptyLinqArray).toHaveProperty("orderByDescending");

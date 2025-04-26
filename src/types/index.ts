@@ -98,4 +98,6 @@ export type Comparator<T> = (a: T, b: T) => number;
  */
 export type KeyValuePair<TKey, TValue> = { key: TKey; value: TValue };
 export type Sorter<T, TKey> = { selector: Selector<T, TKey>; descending: boolean };
-export type Indexable<TKey, TValue> = { [K in TKey extends string ? string : TKey extends number ? number : never]: TValue };
+export type Indexable<TKey, TValue> = {
+  [K in TKey extends string ? string : TKey extends number ? number : never]: TValue;
+};

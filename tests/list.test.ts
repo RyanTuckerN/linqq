@@ -1,6 +1,6 @@
 import { linqq as linq } from "../src";
 
-// list tests 
+// list tests
 
 test(" *** List ***", () => {
   expect(linq([]).toList()).toHaveProperty("add");
@@ -14,7 +14,6 @@ test(" *** List ***", () => {
   expect(linq([]).toList()).toHaveProperty("forEach");
   expect(linq([]).toList()).toHaveProperty("length");
 });
-
 
 test("add()", () => {
   const list = linq([1, 2, 3]).toList();

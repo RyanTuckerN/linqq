@@ -1,17 +1,31 @@
 {
   "compilerOptions": {
     "module": "NodeNext",
-    "target": "es2020",
+    "target": "ES2020",
     "outDir": "dist",
     "rootDir": "src",
     "strict": true,
     "esModuleInterop": true,
     "declaration": true,
+    "declarationMap": true,
     "moduleResolution": "NodeNext",
-    "lib": [
-      "dom",
-      "esnext"
-    ]
+    "allowSyntheticDefaultImports": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "lib": ["DOM", "ESNext"],
+    "baseUrl": "./",
+    "paths": {
+      "@core/*": ["src/core/*"],
+      "@collections/*": ["src/collections/*"],
+      "@iterators/*": ["src/iterators/*"],
+      "@factories/*": ["src/factories/*"],
+      "@interfaces/*": ["src/interfaces/*"],
+      "@interfaces": ["src/interfaces/index.ts"],
+      "@utils/*": ["src/utils/*"]
+    }
   },
-  "include": ["src/**/*", "global.d.ts", "src"]
+  "include": ["src/**/*", "global.d.ts", "vite-env.d.ts"],
+  "exclude": ["node_modules", "dist"]
 }

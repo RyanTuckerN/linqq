@@ -1,6 +1,6 @@
 import { linqq as linq } from "../src";
 
-function *iter(){
+function* iter() {
   yield 1;
   yield 2;
   yield 3;

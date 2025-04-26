@@ -1,5 +1,5 @@
 export class Utils {
-  public static defaultSource<T>(source: T[] = []): T[]{
+  public static defaultSource<T>(source: T[] = []): T[] {
     return source;
   }
 
@@ -10,7 +10,7 @@ export class Utils {
   public static ensureString(value: any): string {
     return String(value);
   }
-  
+
   public static combinePredicates<TSource>(
     predicate1: (item: TSource) => boolean,
     predicate2: (item: TSource) => boolean,

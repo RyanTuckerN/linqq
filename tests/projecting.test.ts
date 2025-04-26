@@ -26,6 +26,5 @@ test("selectMany()", () => {
   expect(hobbies).toEqual(["reading", "swimming", "biking", "hiking", "fishing", "camping"]);
 });
 
-
 const emptyLinqArray = linq([]);
 const numsArray = [1, 2, 3, 4, 5];

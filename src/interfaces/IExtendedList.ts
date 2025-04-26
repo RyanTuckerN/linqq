@@ -6,21 +6,21 @@ import { IList } from "./IList";
  * Represents a collection of elements that can be manipulated in various ways.
  * All methods from IList are available, with additional advanced features for sorting, statistics, and other operations.
  */
-export interface IPowerList<T> extends IList<T> {
+export interface IExtendedList<T> extends IList<T> {
   /**
    * Returns an tuple of two Lists, one with elements that match the predicate and one with elements that do not.
    * @param predicate A function that accepts an argument; the function to perform on each element of the List.
    * @returns An tuple of two Lists, one with elements that match the predicate and one with elements that do not.
    * @example
-   * const list = PowerList.from([1, 2, 3, 4, 5]);
+   * const list = ExtendedList.from([1, 2, 3, 4, 5]);
    * const [even, odd] = list.partition((x) => x % 2 === 0);
    */
-  partition(predicate: Predicate<T>): [IPowerList<T>, IPowerList<T>];
+  partition(predicate: Predicate<T>): [IExtendedList<T>, IExtendedList<T>];
   /**
    * Creates a new List with the elements in a random order.
    * @returns A new List with the elements in a random order.
    */
-  shuffle(): IPowerList<T>;
+  shuffle(): IExtendedList<T>;
   /**
    * Randomizes the order of the elements in the List **in place**.
    * @returns The List after shuffling.
@@ -32,7 +32,7 @@ export interface IPowerList<T> extends IList<T> {
    * @param steps The number of steps to rotate the elements.
    * @returns A new List after rotating.
    */
-  rotate(steps: number): IPowerList<T>;
+  rotate(steps: number): IExtendedList<T>;
   /**
    * Rotates the elements in the List **in place** by a specified number of steps.
    * Positive steps rotate to the right, negative steps rotate to the left.
@@ -44,7 +44,7 @@ export interface IPowerList<T> extends IList<T> {
    * Returns a deep copy of the List.
    * @returns A deep copy of the List.
    */
-  deepClone(): IPowerList<T>;
+  deepClone(): IExtendedList<T>;
   /**
    * Reverses the order of the elements in the List.
    */
@@ -53,7 +53,7 @@ export interface IPowerList<T> extends IList<T> {
    * Transform a List **in place** by applying a selector function to each element.
    * @param selector A function that accepts an argument; the function to perform on each element of the List.
    */
-  transform<TOut>(selector: (element: T, index: number, list: this) => TOut): IPowerList<TOut>;
+  transform<TOut>(selector: (element: T, index: number, list: this) => TOut): IExtendedList<TOut>;
   /**
    * Returns the maximum element in the List based on a selector function.
    * @param selector A function that accepts an argument; the function to perform on each element of the List.
@@ -72,7 +72,7 @@ export interface IPowerList<T> extends IList<T> {
    * @param pageNumber The page number to retrieve.
    * @returns A new List paginated by a specified page size and number.
    */
-  paginate(pageSize: number, pageNumber: number): IPowerList<T>;
+  paginate(pageSize: number, pageNumber: number): IExtendedList<T>;
   /**
    * Returns a map of each unique item in the list to its frequency count.
    * @returns A dictionary of each unique item in the list to its frequency count.
@@ -85,7 +85,7 @@ export interface IPowerList<T> extends IList<T> {
    * @param comparator A function that accepts two arguments; the function to compare two elements of the List.
    * @returns A new List of the top n items, sorted according to a comparator.
    */
-  top(count: number, comparator?: (a: T, b: T) => number): IPowerList<T>;
+  top(count: number, comparator?: (a: T, b: T) => number): IExtendedList<T>;
   /**
    * Returns a new List of the bottom n items, sorted according to a comparator.
    * If no comparator is provided, it sorts by the natural order of the items.
@@ -93,7 +93,7 @@ export interface IPowerList<T> extends IList<T> {
    * @param comparator A function that accepts two arguments; the function to compare two elements of the List.
    * @returns A new List of the bottom n items, sorted according to a comparator.
    */
-  bottom(count: number, comparator?: (a: T, b: T) => number): IPowerList<T>;
+  bottom(count: number, comparator?: (a: T, b: T) => number): IExtendedList<T>;
   /**
    * Get a random element from the List.
    * @returns A random element from the List.
@@ -109,7 +109,7 @@ export interface IPowerList<T> extends IList<T> {
    * @param count The number of elements to take.
    * @returns A new List of random elements.
    */
-  sample(count: number): IPowerList<T>;
+  sample(count: number): IExtendedList<T>;
   /**
    * Sorts the List **in place** using the built-in JavaScript sort method.
    * This method is typically stable, but depends on the browser/runtime implementation.
@@ -214,7 +214,7 @@ export interface IPowerList<T> extends IList<T> {
    * @param selector A function to transform list elements into numbers.
    * @returns A list of the most frequently occurring transformed values.
    */
-  mode(selector?: Selector<T, number>): IPowerList<number>;
+  mode(selector?: Selector<T, number>): IExtendedList<number>;
 
   /**
    * Calculates the variance of elements in the list, optionally transformed by a selector.
@@ -282,37 +282,40 @@ export interface IPowerList<T> extends IList<T> {
    * @param selector A function to transform list elements into numbers.
    * @returns A new list of normalized numbers.
    */
-  normalize(selector?: Selector<T, number>): IPowerList<number>;
+  normalize(selector?: Selector<T, number>): IExtendedList<number>;
 
   /**
    * Calculates the cumulative sum of elements in the list, optionally transformed by a selector.
    * @param selector A function to transform list elements into numbers.
    * @returns A new list containing the cumulative sums.
    */
-  cumulativeSum(selector?: Selector<T, number>): IPowerList<number>;
+  cumulativeSum(selector?: Selector<T, number>): IExtendedList<number>;
 
   /**
    * Batch the elements of the list into chunks of a specified size.
    * @param size The number of elements in each chunk.
    * @returns A new list of chunks.
    * @example
-   * const list = PowerList.from([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+   * const list = ExtendedList.from([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
    * const chunks = list.chunk(3);
    * // chunks: { { 1, 2, 3 }, { 4, 5, 6 }, { 7, 8, 9 }, { 10 } }
    */
-  chunk(size: number): IPowerList<IPowerList<T>>;
+  chunk(size: number): IExtendedList<IExtendedList<T>>;
 
   /**
    * Applies an accumulator function over the elements of the list, returning an IEnumerable of accumulated values at each step.
    * @param seed The initial accumulator value.
    * @param accumulator An accumulator function to be invoked on each element.
    */
-  scan<TAccumulate>(seed: TAccumulate, accumulator: (acc: TAccumulate, value: T) => TAccumulate): IPowerList<TAccumulate>;
+  scan<TAccumulate>(
+    seed: TAccumulate,
+    accumulator: (acc: TAccumulate, value: T) => TAccumulate,
+  ): IExtendedList<TAccumulate>;
 
   /**
    * Generate a sliding window over the elements of the list. Useful for computing moving averages or other windowed statistics.
    * @param size The number of elements in each window.
    * @returns A new list of sliding windows.
    */
-  window(size: number): IPowerList<IPowerList<T>>;
+  window(size: number): IExtendedList<IExtendedList<T>>;
 }

@@ -2,20 +2,33 @@
   "name": "linqq",
   "version": "1.0.0",
   "description": "Why use arrays when you can use linqq?",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
-    "build": "tsc",
-    "test": "jest"
+    "test": "jest",
+    "build": "tsup"
   },
   "keywords": [
     "linq",
-    "ef",
+    "dotnet",
     "arrays",
     "iterable",
     "enumerable",
-    "list"
+    "list",
+    "collection",
+    "javascript",
+    "typescript"
   ],
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "module": "dist/index.mjs",
+  "exports": {
+    "require": "./dist/index.js",
+    "import": "./dist/index.mjs"
+  },
   "author": "Ryan Tucker",
   "license": "ISC",
   "devDependencies": {
@@ -28,6 +41,8 @@
     "terser": "^5.31.0",
     "ts-jest": "^29.1.2",
     "ts-node": "^10.9.2",
-    "typescript": "^5.4.5"
+    "tsconfig-paths": "^4.2.0",
+    "tsup": "^8.4.0",
+    "typescript": "~5.7.2"
   }
 }

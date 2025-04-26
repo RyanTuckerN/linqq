@@ -1,5 +1,5 @@
-import { IEnumerable } from "./interfaces";
-import { Enumerable } from "./enumerables";
+import { IEnumerable } from "@interfaces/IEnumerable";
+import { Enumerable } from "@core/enumerable";
 
 /**
  * Why use arrays when you can use linqq?
@@ -11,5 +11,4 @@ export default function linqq<T>(source: Iterable<T>): IEnumerable<T> {
 }
 
 export { Enumerable, linqq };
-export * from "./types";
-export * from "./interfaces";
+export * from "@interfaces";

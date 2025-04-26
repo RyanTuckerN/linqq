@@ -23,7 +23,6 @@
       "@factories/*": ["src/factories/*"],
       "@interfaces/*": ["src/interfaces/*"],
       "@interfaces": ["src/interfaces/index.ts"],
-      "@utils/*": ["src/utils/*"]
     }
   },
   "include": ["src/**/*", "global.d.ts", "vite-env.d.ts"],

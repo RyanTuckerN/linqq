@@ -374,8 +374,10 @@ export class EnumerableBase<T> implements IEnumerable<T> {
     keySelector: Selector<T, TKey>,
     elementSelector?: Selector<T, TNext>,
     comparer?: IEqualityComparer<TKey>,
-  ): IEnumerable<IGrouping<TKey, T>> {
-    return grouping(this, keySelector, elementSelector, comparer) as IEnumerable<IGrouping<TKey, T>>;
+  ): IEnumerable<IGrouping<TKey, TNext>> {
+    return grouping<T, TKey, TNext>(this, keySelector, elementSelector, comparer) as IEnumerable<
+      IGrouping<TKey, TNext>
+    >;
   }
 
   sequenceEqual(other: Iterable<T>, comparer?: IEqualityComparer<T> | undefined): boolean {

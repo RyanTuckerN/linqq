@@ -356,7 +356,7 @@ export interface IEnumerable<T> extends Iterable<T> {
     keySelector: Selector<T, TKey>,
     elementSelector?: Selector<T, TNext>,
     comparer?: IEqualityComparer<TKey>,
-  ): IEnumerable<IGrouping<TKey, T>>;
+  ): IEnumerable<IGrouping<TKey, TNext>>;
 
   /**
    * Check if the elements in the IEnumerable are equal to the elements in another sequence.

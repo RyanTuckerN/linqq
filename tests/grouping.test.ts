@@ -12,6 +12,54 @@ test("groupBy()", () => {
   expect(admins.count()).toBe(4);
 });
 
+test("groupBy() - by multiple fields (shallow object)", () => {
+  const grouped = linq(employeesArray)
+    .groupBy((p) => ({ department: p.department, access: p.accessLevel }))
+    .toList();
+  expect(grouped.count()).toBeGreaterThan(3); // multiple groups now
+  const hrManagers = grouped.singleOrDefault((g) => g.key.department === "HR" && g.key.access === AccessLevel.Admin);
+  expect(hrManagers).not.toBeUndefined();
+  if (hrManagers) {
+    expect(hrManagers.count()).toBe(2); // Alicia and Grace
+  }
+});
+
+test("groupBy() - by nested field (deep object property)", () => {
+  const grouped = linq(employeesArray)
+    .groupBy((p) => p.address.city)
+    .toList();
+  expect(grouped.count()).toBe(2); // Only 'Springfield' and 'Seattle'
+  const springfield = grouped.single((g) => g.key === "Springfield");
+  expect(springfield.count()).toBe(6);
+  const seattle = grouped.single((g) => g.key === "Seattle");
+  expect(seattle.count()).toBe(6);
+});
+
+test("groupBy() - by constant value (all same group)", () => {
+  const grouped = linq(employeesArray)
+    .groupBy(() => "everyone")
+    .toList();
+  expect(grouped.count()).toBe(1);
+  expect(grouped.single().count()).toBe(employeesArray.length);
+});
+
+test("groupBy() - by primitive property with missing values", () => {
+  const employeesWithMissing = [...employeesArray, { ...alicia, accessLevel: undefined as any }];
+  const grouped = linq(employeesWithMissing)
+    .groupBy((p) => p.accessLevel)
+    .toList();
+  expect(grouped.count()).toBe(4); // Guest, User, Admin, undefined
+  const missing = grouped.single((g) => g.key === undefined);
+  expect(missing.count()).toBe(1);
+});
+
+test("groupBy() - empty source", () => {
+  const grouped = linq([] as Person[])
+    .groupBy((p) => p.accessLevel)
+    .toList();
+  expect(grouped.count()).toBe(0);
+});
+
 enum AccessLevel {
   Guest = 0,
   User = 1,

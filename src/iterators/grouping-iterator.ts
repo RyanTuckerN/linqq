@@ -3,8 +3,7 @@ import { EnumerableBase, IteratorBase } from "@core/enumerable-base";
 import { IEqualityComparer } from "@interfaces/IEqualityComparer";
 import { IGrouping } from "@interfaces/IGrouping";
 import { Selector } from "src/types";
-import { UniversalEqualityComparer } from "src/util/equality-comparers.ts";
-import { Exception } from "src/validator/exception";
+import { GroupByEqualityComparer } from "src/util/equality-comparers.ts";
 
 export class GroupingIterator<TKey, TSource, TNext = TSource> extends IteratorBase<TSource, IGrouping<TKey, TNext>> {
   private lookup?: Lookup<TKey, TSource>;
@@ -13,7 +12,7 @@ export class GroupingIterator<TKey, TSource, TNext = TSource> extends IteratorBa
     source: Iterable<TSource>,
     private keySelector: Selector<TSource, TKey>,
     private elementSelector?: Selector<TSource, TNext>,
-    private comparer: IEqualityComparer<TKey> = new UniversalEqualityComparer<TKey>(),
+    private comparer: IEqualityComparer<TKey> = new GroupByEqualityComparer<TKey>(),
   ) {
     super(source);
   }
@@ -49,7 +48,6 @@ class Grouping<TKey, TValue> extends EnumerableBase<TValue> implements IGrouping
     protected source: Iterable<TValue>,
     public readonly key: TKey,
   ) {
-    if (key === undefined || key === null) throw Exception.argumentNull("key");
     super(source);
     this.key = key;
   }

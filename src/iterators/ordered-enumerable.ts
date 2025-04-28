@@ -46,17 +46,27 @@ export class OrderedEnumerable<T> extends IteratorBase<T> implements IOrderedEnu
 
   private sort(): void {
     const data = Array.isArray(this.source) ? this.source : Array.from(this.source);
-    this.sorted = data.sort((a, b) => {
-      for (const criterion of this.criteria) {
-        const keyA = criterion.selector(a);
-        const keyB = criterion.selector(b);
+
+    // Precompute the sort keys once (avoid recomputing inside comparator)
+    const mapped = data.map((item) => ({
+      item,
+      keys: this.criteria.map((c) => c.selector(item)),
+    }));
+
+    mapped.sort((a, b) => {
+      for (let i = 0; i < this.criteria.length; i++) {
+        const { descending } = this.criteria[i];
+        const keyA = a.keys[i];
+        const keyB = b.keys[i];
         const comparison = keyA < keyB ? -1 : keyA > keyB ? 1 : 0;
         if (comparison !== 0) {
-          return criterion.descending ? -comparison : comparison;
+          return descending ? -comparison : comparison;
         }
       }
       return 0;
     });
+
+    this.sorted = mapped.map((m) => m.item);
 
     // this quick sort works correctly, but it's not as efficient as the built-in sort method
     // I'm keeping it here for testing with different data sets

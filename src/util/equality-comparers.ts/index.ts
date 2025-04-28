@@ -1,4 +1,4 @@
-import { IEqualityComparer } from "../../interfaces";
+import { IEqualityComparer } from "@interfaces";
 
 export class UniversalEqualityComparer<T> implements IEqualityComparer<T> {
   private objectMap = new WeakMap<object, number>();
@@ -19,6 +19,55 @@ export class UniversalEqualityComparer<T> implements IEqualityComparer<T> {
 
   equals(a: T, b: T): boolean {
     return a === b;
+  }
+}
+
+function shallowEqual(a: object, b: object): boolean {
+  const keysA = Object.keys(a);
+  const keysB = Object.keys(b);
+  if (keysA.length !== keysB.length) return false;
+
+  for (const key of keysA) {
+    if (!(key in b) || (a as any)[key] !== (b as any)[key]) {
+      return false;
+    }
+  }
+  return true;
+}
+
+function hashObject(obj: object): string {
+  let cache: Set<any> | null = new Set();
+  const str = JSON.stringify(obj, (key, val) => {
+    if (typeof val === "object" && val !== null) {
+      if (cache!.has(val)) {
+        return "[Circular]";
+      }
+      cache!.add(val);
+    }
+    return val;
+  });
+  cache = null; // Clear the cache
+  return str;
+}
+
+export class GroupByEqualityComparer<T> implements IEqualityComparer<T> {
+  hash(item: T): string {
+    if (isPrimitive(item)) {
+      return `${typeof item}:${String(item)}`;
+    } else if (typeof item === "object" && item !== null) {
+      return `obj:${hashObject(item)}`;
+    }
+    throw new Error("Unsupported key type for hashing.");
+  }
+
+  equals(a: T, b: T): boolean {
+    if (isPrimitive(a) && isPrimitive(b)) {
+      return a === b;
+    }
+    if (typeof a === "object" && typeof b === "object" && a !== null && b !== null) {
+      return shallowEqual(a, b);
+    }
+    return false;
   }
 }
 
@@ -55,8 +104,4 @@ function isPrimitive(value: any): value is Primitive {
 
 function isObject(value: any): value is object {
   return typeof value === "object" && value !== null;
-}
-
-function isFunction(value: any): value is Function {
-  return typeof value === "function";
 }

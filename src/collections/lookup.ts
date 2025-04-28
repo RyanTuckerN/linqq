@@ -1,6 +1,5 @@
 import { IEqualityComparer } from "@interfaces/IEqualityComparer";
 import { Selector } from "src/types";
-import { UniversalEqualityComparer } from "src/util/equality-comparers.ts";
 
 export class Lookup<TKey, T> implements Iterable<KeyedArray<TKey, T>> {
   private map: Map<string, KeyedArray<TKey, T>>;
@@ -8,7 +7,7 @@ export class Lookup<TKey, T> implements Iterable<KeyedArray<TKey, T>> {
     yield* this.map.values();
   }
 
-  private constructor(private comparer: IEqualityComparer<TKey> = new UniversalEqualityComparer<TKey>()) {
+  private constructor(private comparer: IEqualityComparer<TKey>) {
     this.map = new Map<string, KeyedArray<TKey, T>>();
   }
 
@@ -26,7 +25,7 @@ export class Lookup<TKey, T> implements Iterable<KeyedArray<TKey, T>> {
     source: Iterable<TValue>,
     keySelector: Selector<TValue, TKey>,
     elementSelector: Selector<TValue, TNext>,
-    comparer?: IEqualityComparer<TKey>,
+    comparer: IEqualityComparer<TKey>,
   ): Lookup<TKey, TNext> {
     const lookup = new Lookup<TKey, TNext>(comparer);
     for (const item of source) {

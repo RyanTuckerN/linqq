@@ -44,6 +44,11 @@ export class Dictionary<TK, TV, TPrev = TV>
         if (typeof propKey === "string" && !isNaN(+propKey)) {
           propKey = +propKey;
         }
+        
+        if (!target.containsKey(propKey)) {
+          return undefined;
+        }
+        
         return target.get(propKey);
       },
       set(target, prop, value, receiver) {
@@ -134,5 +139,13 @@ export class Dictionary<TK, TV, TPrev = TV>
       .map(([key, value]) => `${Utils.ensureString(key)} => ${Utils.ensureString(value)}`)
       .join(", ");
     return `Dictionary(${this.map.size}): {${entries}}`;
+  }
+  
+  toJSON() {
+    const obj: Record<string, TV> = {};
+    for (const [key, value] of this.map.entries()) {
+      obj[Utils.ensureString(key)] = value;
+    }
+    return obj;
   }
 }

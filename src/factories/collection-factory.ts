@@ -12,7 +12,7 @@ export function createList<T>(source: Iterable<T>): IList<T> {
   if (Array.isArray(source)) {
     return List.from(source);
   }
-  return List.from(Array.from(source));
+  return List.from([...source]);
 }
 
 export function createDictionary<TSource, TKey, TValue>(

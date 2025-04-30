@@ -47,7 +47,7 @@ export class List<T> extends EnumerableBase<T> implements IExtendedList<T> {
     if (source instanceof List) return source;
     let newSource = source;
     if (!Array.isArray(source)) {
-      newSource = Array.from(source);
+      newSource = [...source];
     }
 
     return new List<T>(newSource as T[]);

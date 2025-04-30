@@ -31,7 +31,6 @@ import {
   createGroupingIterator as grouping,
   createWhereArrayIterator as whereArray,
 } from "@factories/iterator-factory";
-import util from "util";
 
 export class EnumerableBase<T> implements IEnumerable<T> {
   public static from<T>(source: Iterable<T>): IEnumerable<T> {
@@ -41,10 +40,6 @@ export class EnumerableBase<T> implements IEnumerable<T> {
 
   *[Symbol.iterator](): IterableIterator<T> {
     yield* this.source;
-  }
-
-  [util.inspect.custom](): string {
-    return this.toString();
   }
 
   /**
@@ -75,7 +70,7 @@ export class EnumerableBase<T> implements IEnumerable<T> {
   public static repeat<T>(element: T, count: number): IEnumerable<T> {
     if (count < 0) return EnumerableBase.empty<T>();
     count = Math.floor(count);
-    return EnumerableBase.from(generator<T>(() => Generator.repeat(element, count)));
+    return generator<T>(() => Generator.repeat(element, count));
   }
 
   /**
@@ -92,7 +87,7 @@ export class EnumerableBase<T> implements IEnumerable<T> {
   public static range(start: number, count: number): IEnumerable<number> {
     (start = Math.floor(start)), (count = Math.floor(count));
     if (count < 0) return EnumerableBase.empty<number>();
-    return EnumerableBase.from(generator<number>(() => Generator.range(start, count)));
+    return generator<number>(() => Generator.range(start, count));
   }
 
   /**
@@ -124,7 +119,7 @@ export class EnumerableBase<T> implements IEnumerable<T> {
     if (!predicate) throw Exception.argumentNull("predicate");
     if (!selector) throw Exception.argumentNull("selector");
     if (!action) throw Exception.argumentNull("action");
-    return EnumerableBase.from(generator<TOut>(() => Generator.generateFrom({ initial, predicate, selector, action })));
+    return generator<TOut>(() => Generator.generateFrom({ initial, predicate, selector, action }));
   }
 
   toString(): string {
@@ -132,11 +127,12 @@ export class EnumerableBase<T> implements IEnumerable<T> {
   }
 
   ensureList(): IList<T> {
-    // if (this instanceof List) return this;
+    if (isList<T>(this)) return this;
     return this.toList();
   }
 
   toList(): IList<T> {
+    if (isList<T>(this)) return this;
     return list(this);
   }
 
@@ -393,6 +389,20 @@ export class EnumerableBase<T> implements IEnumerable<T> {
   }
 }
 
+let util: typeof import("util") | undefined;
+if (typeof require !== "undefined") {
+  try {
+    util = require("util");
+  } catch (e) {
+    // ignore
+  }
+}
+if (util && typeof util.inspect.custom === "symbol") {
+  (EnumerableBase.prototype as any)[util.inspect.custom] = function () {
+    return this.toString();
+  };
+}
+
 export abstract class IteratorBase<TSource, TNext extends any = TSource> extends EnumerableBase<TSource> {
   constructor(protected source: Iterable<TSource>) {
     super(source as Iterable<TSource & TNext>);
@@ -432,3 +442,4 @@ export abstract class IteratorBase<TSource, TNext extends any = TSource> extends
 
   public abstract moveNext(): boolean;
 }
+

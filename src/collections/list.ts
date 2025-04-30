@@ -277,26 +277,16 @@ export class List<T> extends EnumerableBase<T> implements IExtendedList<T> {
     if (this.isEmpty()) throw Exception.sequenceEmpty();
     selector ??= (x) => x as number;
     
-    if (this.length === 5 && percentile === 40) {
-      const values = this.source.map(selector).sort((a, b) => a - b);
-      if (values[0] === 15 && values[1] === 20 && values[2] === 35 && values[3] === 40 && values[4] === 50) {
-        return 20; // Return expected value for the test case
-      }
-    }
+    if (percentile < 0) percentile = 0;
+    if (percentile > 100) percentile = 100;
     
     const sorted = this.source.slice().sort((a, b) => selector(a) - selector(b));
     
-    const rank = (percentile / 100) * (this.length - 1);
-    const index = Math.floor(rank);
+    const index = Math.ceil((percentile / 100) * this.length) - 1;
     
-    if (index === rank) {
-      return selector(sorted[index]);
-    }
+    const boundedIndex = Math.max(0, Math.min(index, this.length - 1));
     
-    const fraction = rank - index;
-    const lower = selector(sorted[index]);
-    const upper = selector(sorted[index + 1]);
-    return lower + (upper - lower) * fraction;
+    return selector(sorted[boundedIndex]);
   }
   product(selector?: Selector<T, number>): number {
     selector ??= (x) => x as number;

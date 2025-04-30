@@ -70,8 +70,8 @@ test("transform()", () => {
   const list = linq([1, 2, 3]).toList();
   const transformed = list.transform(x => x * 2);
   
-  expect(list.toArray()).toEqual([1, 2, 3]);
-  expect(transformed.toArray()).toEqual([2, 4, 6]);
+  expect(list.toArray()).toEqual([2, 4, 6]);
+  expect(transformed).toBe(list);
   
   const withIndex = linq([1, 2, 3]).toList()
     .transform((x, i) => x + i);
@@ -104,12 +104,14 @@ test("median()", () => {
 });
 
 test("mode()", () => {
-  expect(linq([1, 2, 2, 3]).toList().mode().toArray()).toEqual([2]);
+  expect(linq([1, 2, 2, 3]).toList().mode()).toBe(2);
   
-  expect(linq([1, 1, 2, 2, 3]).toList().mode().toArray().sort()).toEqual([1, 2]);
+  const multiModeList = linq([1, 1, 2, 2, 3]).toList();
+  const result = multiModeList.mode();
+  expect([1, 2].includes(result)).toBe(true);
   
   const objList = linq([{ val: 1 }, { val: 2 }, { val: 2 }]).toList();
-  expect(objList.mode(x => x.val).toArray()).toEqual([2]);
+  expect(objList.mode(x => x.val)).toBe(2);
   
   expect(() => linq<number>([]).toList().mode()).toThrow();
 });

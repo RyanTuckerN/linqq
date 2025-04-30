@@ -152,8 +152,8 @@ export class List<T> extends EnumerableBase<T> implements IExtendedList<T> {
     return this;
   }
   transform<TOut>(selector: (element: T, index: number, list: this) => TOut): IExtendedList<TOut> {
-    const result = new List<TOut>(this.source.map((v, i) => selector(v, i, this)));
-    return result;
+    this.source.forEach((v, i) => ((this.source as any[])[i] = selector(v, i, this)));
+    return Utils.cast<IExtendedList<TOut>>(this);
   }
   maxBy(selector: (element: T) => number): T {
     return this.aggregate(this.source[0], (max, x) => (selector(x) > selector(max) ? x : max));
@@ -243,7 +243,7 @@ export class List<T> extends EnumerableBase<T> implements IExtendedList<T> {
     const mid = Math.floor(this.length / 2);
     return this.length % 2 === 0 ? (selector(sorted[mid - 1]) + selector(sorted[mid])) / 2 : selector(sorted[mid]);
   }
-  mode(selector?: Selector<T, number>): IExtendedList<number> {
+  mode(selector?: Selector<T, number>): number {
     if (this.isEmpty()) throw Exception.sequenceEmpty();
     selector ??= (x) => x as number;
     
@@ -254,18 +254,16 @@ export class List<T> extends EnumerableBase<T> implements IExtendedList<T> {
     }
     
     let maxFreq = 0;
-    for (const freq of valueFreq.values()) {
-      maxFreq = Math.max(maxFreq, freq);
-    }
+    let mode: number | null = null;
     
-    const modes: number[] = [];
     for (const [value, freq] of valueFreq.entries()) {
-      if (freq === maxFreq) {
-        modes.push(value);
+      if (freq > maxFreq) {
+        maxFreq = freq;
+        mode = value;
       }
     }
     
-    return List.from(modes);
+    return mode!;
   }
   variance(selector?: Selector<T, number>): number {
     if (this.isEmpty()) throw Exception.sequenceEmpty();

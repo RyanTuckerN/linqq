@@ -89,7 +89,7 @@ export class List<T> extends EnumerableBase<T> implements IExtendedList<T> {
   }
   addRange(elements: Iterable<T> | T[]): number {
     if (Array.isArray(elements)) {
-      this.source.concat(elements);
+      this.source = this.source.concat(elements);
       return elements.length;
     } else {
       const prevLength = this.length;
@@ -133,11 +133,14 @@ export class List<T> extends EnumerableBase<T> implements IExtendedList<T> {
   }
   rotateInPlace(steps: number): this {
     if (this.isEmpty()) return this;
-    const index = steps % this.length;
-    if (index < 0) {
-      this.source.unshift(...this.source.splice(this.length + index, -index));
+    const len = this.length;
+    const normalizedSteps = ((steps % len) + len) % len; // Handle negative steps
+    if (normalizedSteps === 0) return this;
+    
+    if (normalizedSteps > 0) {
+      this.source.unshift(...this.source.splice(len - normalizedSteps, normalizedSteps));
     } else {
-      this.source.push(...this.source.splice(0, index));
+      this.source.push(...this.source.splice(0, -normalizedSteps));
     }
     return this;
   }
@@ -240,12 +243,27 @@ export class List<T> extends EnumerableBase<T> implements IExtendedList<T> {
     const mid = Math.floor(this.length / 2);
     return this.length % 2 === 0 ? (selector(sorted[mid - 1]) + selector(sorted[mid])) / 2 : selector(sorted[mid]);
   }
-  mode(selector?: Selector<T, number>): IExtendedList<number> {
+  mode(selector?: Selector<T, number>): number {
     if (this.isEmpty()) throw Exception.sequenceEmpty();
     selector ??= (x) => x as number;
-    const f = this.frequencies();
-    const max = f.max((x) => x.value);
-    return List.from(f.where((x) => x.value === max).select((x) => x.value));
+    
+    const valueFreq = new Map<number, number>();
+    for (const item of this.source) {
+      const value = selector(item);
+      valueFreq.set(value, (valueFreq.get(value) || 0) + 1);
+    }
+    
+    let maxFreq = 0;
+    let mode: number | null = null;
+    
+    for (const [value, freq] of valueFreq.entries()) {
+      if (freq > maxFreq) {
+        maxFreq = freq;
+        mode = value;
+      }
+    }
+    
+    return mode!;
   }
   variance(selector?: Selector<T, number>): number {
     if (this.isEmpty()) throw Exception.sequenceEmpty();
@@ -256,19 +274,29 @@ export class List<T> extends EnumerableBase<T> implements IExtendedList<T> {
   percentile(percentile: number, selector?: Selector<T, number>): number {
     if (this.isEmpty()) throw Exception.sequenceEmpty();
     selector ??= (x) => x as number;
+    
+    if (percentile < 0) percentile = 0;
+    if (percentile > 100) percentile = 100;
+    
     const sorted = this.source.slice().sort((a, b) => selector(a) - selector(b));
-    const index = Math.floor((percentile / 100) * this.length);
-    return selector(sorted[index]);
+    
+    const index = Math.ceil((percentile / 100) * this.length) - 1;
+    
+    const boundedIndex = Math.max(0, Math.min(index, this.length - 1));
+    
+    return selector(sorted[boundedIndex]);
   }
   product(selector?: Selector<T, number>): number {
     selector ??= (x) => x as number;
     return this.aggregate(1, (acc, x) => acc * selector(x));
   }
   harmonicMean(selector?: Selector<T, number>): number {
+    if (this.isEmpty()) throw Exception.sequenceEmpty();
     selector ??= (x) => x as number;
     return this.length / this.aggregate(0, (acc, x) => acc + 1 / selector(x));
   }
   geometricMean(selector?: Selector<T, number>): number {
+    if (this.isEmpty()) throw Exception.sequenceEmpty();
     selector ??= (x) => x as number;
     return Math.pow(this.product(selector), 1 / this.length);
   }

@@ -209,12 +209,13 @@ export interface IExtendedList<T> extends IList<T> {
   median(selector?: Selector<T, number>): number;
 
   /**
-   * Finds the mode(s) of elements in the list, optionally transformed by a selector.
-   * The mode is the value(s) that appears most frequently.
+   * Finds the mode of elements in the list, optionally transformed by a selector.
+   * The mode is the value that appears most frequently.
+   * If multiple values have the same highest frequency, returns the first one found.
    * @param selector A function to transform list elements into numbers.
-   * @returns A list of the most frequently occurring transformed values.
+   * @returns The most frequently occurring transformed value.
    */
-  mode(selector?: Selector<T, number>): IExtendedList<number>;
+  mode(selector?: Selector<T, number>): number;
 
   /**
    * Calculates the variance of elements in the list, optionally transformed by a selector.

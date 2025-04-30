@@ -70,6 +70,29 @@ test("toArray()", () => {
   expect(arr.length).toBe(10);
 });
 
+test("JSON.stringify", () => {
+  const dict = getPeopleDict();
+  
+  const json = JSON.stringify(dict);
+  expect(typeof json).toBe("string");
+  
+  const parsed = JSON.parse(json);
+  
+  expect(parsed["123"].name).toBe("Alice");
+  expect(parsed["234"].name).toBe("Bob");
+  expect(parsed["345"].name).toBe("Charlie");
+  
+  expect(Object.keys(parsed).length).toBe(10);
+  
+  const alice = parsed["123"];
+  expect(alice).toHaveProperty("id", 123);
+  expect(alice).toHaveProperty("name", "Alice");
+  expect(alice).toHaveProperty("age", 30);
+  expect(alice).toHaveProperty("hobbyIds");
+  expect(Array.isArray(alice.hobbyIds)).toBe(true);
+  expect(alice.hobbyIds).toEqual([1, 2, 3]);
+});
+
 const getPeopleDict = () => {
   const people = linq([
     { id: 123, name: "Alice", age: 30, hobbyIds: [1, 2, 3] },

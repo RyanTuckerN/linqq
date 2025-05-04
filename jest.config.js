@@ -21,5 +21,6 @@ module.exports = {
     "^@operations/(.*)$": "<rootDir>/src/operations/$1",
     "^@util/(.*)$": "<rootDir>/src/util/$1",
     "^src/(.*)$": "<rootDir>/src/$1",
+    "^src$": "<rootDir>/src",
   },
 };

@@ -1,58 +1,46 @@
-import { KeyedArray, Lookup } from "@collections/lookup";
+import { Lookup, GroupBucket } from "@collections/lookup";
 import { EnumerableBase, IteratorBase } from "@core/enumerable-base";
 import { IEqualityComparer } from "@interfaces/IEqualityComparer";
 import { IGrouping } from "@interfaces/IGrouping";
-import { Selector } from "src/types";
 import { GroupByEqualityComparer } from "src/util/equality-comparers.ts";
 
 export class GroupingIterator<TKey, TSource, TNext = TSource> extends IteratorBase<TSource, IGrouping<TKey, TNext>> {
-  private lookup?: Lookup<TKey, TSource>;
-  private lookupIterator?: Iterator<KeyedArray<TKey, TSource>>;
+  private iterator: Iterator<GroupBucket<TKey, TNext>> | null = null;
+
   constructor(
-    source: Iterable<TSource>,
-    private keySelector: Selector<TSource, TKey>,
-    private elementSelector?: Selector<TSource, TNext>,
-    private comparer: IEqualityComparer<TKey> = new GroupByEqualityComparer<TKey>(),
+    src: Iterable<TSource>,
+    private readonly keySel: (x: TSource) => TKey,
+    private readonly elemSel: (x: TSource) => TNext = (x) => x as TNext & TSource,
+    private readonly cmp: IEqualityComparer<TKey> = new GroupByEqualityComparer<TKey>(),
   ) {
-    super(source);
+    super(src);
   }
 
-  public moveNext(): boolean {
-    this.lookup ??= Lookup.create(this.source, this.keySelector, (x) => x, this.comparer);
-    this.lookupIterator ??= this.lookup[Symbol.iterator]();
-
-    let result;
-    while (!(result = this.lookupIterator.next()).done) {
-      const key = result.value.key;
-      const grouping = result.value;
-      this.current = Grouping.createGrouping<TKey, TNext>(
-        (this.elementSelector ? grouping.map(this.elementSelector) : grouping) as TNext[],
-        key,
-      );
-      return true;
+  moveNext(): boolean {
+    if (!this.iterator) {
+      const lookup = Lookup.build(this.source, this.keySel, this.elemSel, this.cmp);
+      this.iterator = lookup[Symbol.iterator]();
     }
-    return false;
-  }
+    const n = this.iterator.next();
+    if (n.done) return false;
 
-  public clone(): GroupingIterator<TKey, TSource, TNext> {
-    return new GroupingIterator(this.source, this.keySelector, this.elementSelector, this.comparer);
+    this.current = new Grouping(n.value.key, n.value.items);
+    return true;
+  }
+  clone() {
+    return this.constructor(this.source, this.keySel, this.elemSel, this.cmp);
   }
 }
 
 class Grouping<TKey, TValue> extends EnumerableBase<TValue> implements IGrouping<TKey, TValue> {
-  public static createGrouping<TKey, TValue>(source: Iterable<TValue>, key: TKey): IGrouping<TKey, TValue> {
-    return new Grouping<TKey, TValue>(source, key);
-  }
-
   constructor(
-    protected source: Iterable<TValue>,
-    public readonly key: TKey,
+    readonly key: TKey,
+    src: TValue[],
   ) {
-    super(source);
-    this.key = key;
+    super(src);
   }
 
-  toString(): string {
-    return `Grouping: ${this.key}, ${super.toString()}`;
+  toArray(): TValue[] {
+    return this.source as TValue[];
   }
 }

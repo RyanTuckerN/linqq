@@ -1,122 +1,156 @@
 import { IteratorBase } from "@core/enumerable-base";
 import { IOrderedEnumerable } from "@interfaces/IOrderedEnumerable";
 import { Sorter } from "src/types";
+import { Sort } from "src/operations/sort";
+import { createList } from "@factories/collection-factory";
+import { IList } from "@interfaces/IList";
 
 export class OrderedEnumerable<T> extends IteratorBase<T> implements IOrderedEnumerable<T> {
   private index = 0;
   private sorted: T[] | null = null;
+
   public static createOrderedEnumerable<T, TKey>(
     source: Iterable<T>,
     sortExpressions: Sorter<T, TKey>[] = [],
   ): IOrderedEnumerable<T> {
     return new OrderedEnumerable<T>(source, sortExpressions);
   }
-  constructor(
+
+  private constructor(
     source: Iterable<T>,
     private criteria: Sorter<T, any>[],
   ) {
     super(source);
   }
 
-  thenBy<TKey extends any>(selector: (x: T) => TKey): this {
+  thenBy<TKey>(selector: (x: T) => TKey): this {
     this.criteria = [...this.criteria, { selector, descending: false }];
     return this;
   }
-
-  thenByDescending<TKey extends any>(selector: (x: T) => TKey): this {
+  thenByDescending<TKey>(selector: (x: T) => TKey): this {
     this.criteria = [...this.criteria, { selector, descending: true }];
     return this;
   }
 
+  public override toArray(): T[] {
+    if (!this.sorted) this.sort();
+    return this.sorted!;
+  }
+
+  public override toList(): IList<T> {
+    if (!this.sorted) this.sort();
+    return createList(this.sorted!);
+  }
+
+  public clone(): IteratorBase<T, T> {
+    return this.constructor(this.source, [...this.criteria]);
+  }
+
   public moveNext(): boolean {
-    if (!this.sorted) {
-      this.sort();
-    }
+    if (!this.sorted) this.sort();
     if (this.index < this.sorted!.length) {
       this.current = this.sorted![this.index++];
-
       return true;
     }
     return false;
   }
 
-  public clone(): IteratorBase<T, T> {
-    return new OrderedEnumerable<T>(this.source, this.criteria);
-  }
-
   private sort(): void {
-    const data = Array.isArray(this.source) ? this.source : Array.from(this.source);
+    const src = Array.isArray(this.source) ? this.source : Array.from(this.source);
+    const n = src.length;
+    const k = this.criteria.length;
 
-    // Precompute the sort keys once (avoid recomputing inside comparator)
-    const mapped = data.map((item) => ({
-      item,
-      keys: this.criteria.map((c) => c.selector(item)),
-    }));
+    if (k === 1) {
+      const { selector, descending } = this.criteria[0];
 
-    mapped.sort((a, b) => {
-      for (let i = 0; i < this.criteria.length; i++) {
-        const { descending } = this.criteria[i];
-        const keyA = a.keys[i];
-        const keyB = b.keys[i];
-        const comparison = keyA < keyB ? -1 : keyA > keyB ? 1 : 0;
-        if (comparison !== 0) {
-          return descending ? -comparison : comparison;
+      // small‑N → native sort (cheapest)
+      if (n < 2_048) {
+        this.sorted = [...src].sort((a, b) => {
+          const ka = selector(a);
+          const kb = selector(b);
+          return ka < kb ? -1 : ka > kb ? 1 : 0;
+        });
+        if (descending) this.sorted.reverse();
+        return;
+      }
+
+      // unsigned ints, fast path
+      const keys32 = new Uint32Array(n);
+      let isUInt32 = true;
+      for (let i = 0; i < n; i++) {
+        const v = selector(src[i]);
+        if (typeof v !== "number" || v >>> 0 !== v) {
+          isUInt32 = false;
+          break;
         }
+        keys32[i] = v;
+      }
+      if (isUInt32) {
+        const idx = new Array<number>(n);
+        for (let i = 0; i < n; i++) idx[i] = i;
+        Sort.radixSortIdx(keys32, idx);
+        this.sorted = idx.map((i) => src[i]);
+        if (descending) this.sorted.reverse();
+        return;
+      }
+
+      // Date epoch‑ms, fast path (hi+lo, radix twice with bit shifts)
+      const lo = new Uint32Array(n);
+      let hi: Uint32Array | null = null;
+      let isDate = true;
+      for (let i = 0; i < n; i++) {
+        const d = selector(src[i]);
+        if (!(d instanceof Date)) {
+          isDate = false;
+          break;
+        }
+        const t = d.getTime();
+        lo[i] = t & 0xffff_ffff;
+        const h = t / 0x1_0000_0000;
+        if (h > 0xffff_ffff) {
+          isDate = false;
+          break;
+        }
+        if (!hi) hi = new Uint32Array(n);
+        hi[i] = (t / 0x1_0000_0000) >>> 0;
+      }
+      if (isDate) {
+        const idx = new Array<number>(n);
+        for (let i = 0; i < n; i++) idx[i] = i;
+        Sort.radixSortIdx(lo, idx);
+        Sort.radixSortIdx(hi!, idx);
+        this.sorted = idx.map((i) => src[i]);
+        if (descending) this.sorted.reverse();
+        return;
+      }
+
+      // fallback single‑key (pre‑computed keys)
+      const keys = src.map(selector);
+      const idx = new Array<number>(n);
+      for (let i = 0; i < n; i++) idx[i] = i;
+      idx.sort((i, j) => (keys[i] < keys[j] ? -1 : keys[i] > keys[j] ? 1 : 0));
+      if (descending) idx.reverse();
+      this.sorted = idx.map((i) => src[i]);
+      return;
+    }
+
+    // multi‑key path
+    const keyCols: any[][] = Array.from({ length: k }, () => new Array(n));
+    for (let c = 0; c < k; c++) {
+      const sel = this.criteria[c].selector;
+      for (let i = 0; i < n; i++) keyCols[c][i] = sel(src[i]);
+    }
+    const dir = this.criteria.map((c) => (c.descending ? -1 : 1));
+    const idx = new Array<number>(n);
+    for (let i = 0; i < n; i++) idx[i] = i;
+
+    idx.sort((a, b) => {
+      for (let c = 0; c < k; c++) {
+        const diff = keyCols[c][a] < keyCols[c][b] ? -1 : keyCols[c][a] > keyCols[c][b] ? 1 : 0;
+        if (diff) return dir[c] * diff;
       }
       return 0;
     });
-
-    this.sorted = mapped.map((m) => m.item);
-
-    // this quick sort works correctly, but it's not as efficient as the built-in sort method
-    // I'm keeping it here for testing with different data sets
-    // const quickSort = (arr: any[], left: number, right: number): void => {
-    //   let index;
-    //   if (arr.length > 1) {
-    //     index = partition(arr, left, right);
-    //     if (left < index - 1) {
-    //       quickSort(arr, left, index - 1);
-    //     }
-    //     if (index < right) {
-    //       quickSort(arr, index, right);
-    //     }
-    //   }
-    // };
-
-    // const partition = (arr: any[], left: number, right: number) => {
-    //   const pivot = arr[Math.floor((right + left) / 2)];
-    //   let i = left;
-    //   let j = right;
-    //   while (i <= j) {
-    //     while (compare(arr[i], pivot) < 0) {
-    //       i++;
-    //     }
-    //     while (compare(arr[j], pivot) > 0) {
-    //       j--;
-    //     }
-    //     if (i <= j) {
-    //       [arr[i], arr[j]] = [arr[j], arr[i]];
-    //       i++;
-    //       j--;
-    //     }
-    //   }
-    //   return i;
-    // };
-
-    // const compare = (a: any, b: any) => {
-    //   for (const criterion of this.criteria) {
-    //     const keyA = criterion.selector(a);
-    //     const keyB = criterion.selector(b);
-    //     const comparison = keyA < keyB ? -1 : keyA > keyB ? 1 : 0;
-    //     if (comparison !== 0) {
-    //       return criterion.descending ? -comparison : comparison;
-    //     }
-    //   }
-    //   return 0;
-    // };
-
-    // const data = Array.isArray(this.source) ? this.source : Array.from(this.source);
-    // quickSort(data, 0, data.length - 1);
-    // this.sorted = data;
+    this.sorted = idx.map((i) => src[i]);
   }
 }

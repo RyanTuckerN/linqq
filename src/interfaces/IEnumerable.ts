@@ -116,13 +116,13 @@ export interface IEnumerable<T> extends Iterable<T> {
    * @param selector The selector to transform elements with.
    * @returns The maximum element in the IEnumerable.
    */
-  max<TOut>(selector?: Selector<T, TOut>): TOut;
+  max<TOut = T extends number ? T : unknown>(selector?: Selector<T, TOut>): TOut;
   /**
    * Find the minimum element in the IEnumerable.
    * @param selector The selector to transform elements with.
    * @returns The minimum element in the IEnumerable.
    */
-  min<TOut>(selector?: Selector<T, TOut>): TOut;
+  min<TOut = T extends number ? T : unknown>(selector?: Selector<T, TOut>): TOut;
 
   // Quantifiers
   /**

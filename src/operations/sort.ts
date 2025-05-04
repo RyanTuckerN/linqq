@@ -171,9 +171,11 @@ export class Sort {
   }
 
   public static radixSort(array: number[]): number[] {
-    const max = Math.max(...array);
+    if (array.length === 0) return array;
+
+    const max = array.reduce((a, b) => Math.max(a, b), -Infinity);
     let exp = 1;
-    while (max / exp > 0) {
+    while (Math.floor(max / exp) > 0) {
       this.countSortByDigit(array, exp);
       exp *= 10;
     }
@@ -200,6 +202,31 @@ export class Sort {
 
     for (let i = 0; i < array.length; i++) {
       array[i] = output[i];
+    }
+  }
+
+  public static radixSortIdx(keys: Uint32Array, idx: number[]) {
+    if (idx.length === 0) return;
+
+    const out = new Array(idx.length);
+    const count = new Uint32Array(256); // 1 KB, zero‑filled
+
+    for (let shift = 0; shift < 32; shift += 8) {
+      count.fill(0);
+
+      for (let k = 0; k < idx.length; k++) {
+        count[(keys[idx[k]] >>> shift) & 0xff]++;
+      }
+
+      for (let i = 1; i < 256; i++) count[i] += count[i - 1];
+
+      for (let k = idx.length - 1; k >= 0; k--) {
+        const i = idx[k];
+        const digit = (keys[i] >>> shift) & 0xff;
+        out[--count[digit]] = i;
+      }
+
+      for (let i = 0; i < idx.length; i++) idx[i] = out[i];
     }
   }
 

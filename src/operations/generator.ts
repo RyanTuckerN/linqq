@@ -2,7 +2,7 @@ import { createHashSet as hashSet } from "@factories/collection-factory";
 import { IEqualityComparer } from "@interfaces/IEqualityComparer";
 import { PredicateWithIndex, Selector, Predicate } from "../types";
 
-export class Generator {
+export class GeneratorUtils {
   public static *where<T>(source: Iterable<T>, predicate: PredicateWithIndex<T>): Iterable<T> {
     let i = -1;
     for (const item of source) {
@@ -70,7 +70,7 @@ export class Generator {
   }
 
   public static *union<T>(source: Iterable<T>, other: Iterable<T>, comparer?: IEqualityComparer<T>) {
-    let set: { values: () => Iterable<T> };
+    let set: ISet<T>;
     if (comparer) {
       set = hashSet<T>([...source, ...other], comparer);
     } else {
@@ -80,7 +80,7 @@ export class Generator {
   }
 
   public static *intersect<T>(source: Iterable<T>, other: Iterable<T>, comparer?: IEqualityComparer<T>): Iterable<T> {
-    let set: { values: () => Iterable<T>; has: (item: T) => boolean };
+    let set: ISet<T>;
     if (comparer) {
       set = hashSet<T>(other, comparer);
     } else {
@@ -91,7 +91,7 @@ export class Generator {
     }
   }
   public static *except<T>(source: Iterable<T>, other: Iterable<T>, comparer?: IEqualityComparer<T>): Iterable<T> {
-    let set: { values: () => Iterable<T>; has: (item: T) => boolean };
+    let set: ISet<T>;
     if (comparer) {
       set = hashSet<T>(other, comparer);
     } else {
@@ -155,4 +155,51 @@ export class Generator {
       secondResult = secondIterator.next();
     }
   }
+
+  /**
+   * Generates a range, optionally transformed by a selector function.
+   * @param count The number of elements to generate.
+   * @param getValue A function to transform the index into a value.
+   * @returns A generator function that yields the generated values.
+   * @example
+   * ```typescript
+   * const sequence = generate(5, (i) => i * 2);
+   * // sequence: 0, 2, 4, 6, 8
+   * ```
+   */
+  public static generator<T = number>(count: number, getValue: (i: number) => T = (i) => i as T): () => Generator<T> {
+    return function* () {
+      for (let i = 0; i < count; i++) {
+        yield getValue(i);
+      }
+    };
+  }
+
+  /**
+   * Creates an array from a generator function.
+   * @param generator A generator function that yields values.
+   * @param getArray A function to transform the generated array into a different type.
+   * @returns The transformed array.
+   * @example
+   * ```typescript
+   * const generator = function* () {
+   *   yield 1;
+   *   yield 2;
+   *   yield 3;
+   * };
+   * const array = arrayFromGenerator(generator, (arr) => arr.map((x) => x * 2));
+   * // array: [2, 4, 6]
+   * ```
+   */
+  public static arrayFromGenerator<T, R = T[]>(
+    generator: Generator<T>,
+    getArray: (array: T[]) => R = (a) => a as R,
+  ): R {
+    return getArray(Array.from(generator));
+  }
+}
+
+interface ISet<T> {
+  has: (item: T) => boolean;
+  values: () => Iterable<T>;
 }

@@ -9,14 +9,7 @@ export class OrderedEnumerable<T> extends IteratorBase<T> implements IOrderedEnu
   private index = 0;
   private sorted: T[] | null = null;
 
-  public static createOrderedEnumerable<T, TKey>(
-    source: Iterable<T>,
-    sortExpressions: Sorter<T, TKey>[] = [],
-  ): IOrderedEnumerable<T> {
-    return new OrderedEnumerable<T>(source, sortExpressions);
-  }
-
-  private constructor(
+  constructor(
     source: Iterable<T>,
     private criteria: Sorter<T, any>[],
   ) {
@@ -43,7 +36,7 @@ export class OrderedEnumerable<T> extends IteratorBase<T> implements IOrderedEnu
   }
 
   public clone(): IteratorBase<T, T> {
-    return this.constructor(this.source, [...this.criteria]);
+    return new OrderedEnumerable(this.source, [...this.criteria]);
   }
 
   public moveNext(): boolean {

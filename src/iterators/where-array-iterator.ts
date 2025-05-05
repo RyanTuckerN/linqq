@@ -18,13 +18,17 @@ export class WhereArrayIterator<TSource> extends IteratorBase<TSource> {
   }
 
   public moveNext(): boolean {
-    while (this.index < this.source.length) {
-      const item = this.source[this.index++];
+    const src = this.source;
+    const len = src.length;
+    for (; this.index < len; this.index++) {
+      const item = src[this.index];
       if (this._predicate(item)) {
         this.current = item;
+        this.index++;
         return true;
       }
     }
+    this.index = len;
     return false;
   }
 
@@ -38,6 +42,6 @@ export class WhereArrayIterator<TSource> extends IteratorBase<TSource> {
   }
 
   public override select<TOut>(selector: SelectorWithIndex<TSource, TOut>): IEnumerable<TOut> {
-    return Utils.cast<IEnumerable<TOut>>(new WhereSelectArrayIterator(this.source, this._predicate, selector));
+    return (new WhereSelectArrayIterator(this.source, this._predicate, selector)) as unknown as IEnumerable<TOut>
   }
 }

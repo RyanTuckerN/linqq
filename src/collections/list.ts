@@ -136,7 +136,7 @@ export class List<T> extends EnumerableBase<T> implements IExtendedList<T> {
     const len = this.length;
     const normalizedSteps = ((steps % len) + len) % len; // Handle negative steps
     if (normalizedSteps === 0) return this;
-    
+
     if (normalizedSteps > 0) {
       this.source.unshift(...this.source.splice(len - normalizedSteps, normalizedSteps));
     } else {
@@ -153,7 +153,7 @@ export class List<T> extends EnumerableBase<T> implements IExtendedList<T> {
   }
   transform<TOut>(selector: (element: T, index: number, list: this) => TOut): IExtendedList<TOut> {
     this.source.forEach((v, i) => ((this.source as any[])[i] = selector(v, i, this)));
-    return Utils.cast<IExtendedList<TOut>>(this);
+    return this as unknown as IExtendedList<TOut>;
   }
   maxBy(selector: (element: T) => number): T {
     return this.aggregate(this.source[0], (max, x) => (selector(x) > selector(max) ? x : max));
@@ -246,23 +246,23 @@ export class List<T> extends EnumerableBase<T> implements IExtendedList<T> {
   mode(selector?: Selector<T, number>): number {
     if (this.isEmpty()) throw Exception.sequenceEmpty();
     selector ??= (x) => x as number;
-    
+
     const valueFreq = new Map<number, number>();
     for (const item of this.source) {
       const value = selector(item);
       valueFreq.set(value, (valueFreq.get(value) || 0) + 1);
     }
-    
+
     let maxFreq = 0;
     let mode: number | null = null;
-    
+
     for (const [value, freq] of valueFreq.entries()) {
       if (freq > maxFreq) {
         maxFreq = freq;
         mode = value;
       }
     }
-    
+
     return mode!;
   }
   variance(selector?: Selector<T, number>): number {
@@ -274,16 +274,16 @@ export class List<T> extends EnumerableBase<T> implements IExtendedList<T> {
   percentile(percentile: number, selector?: Selector<T, number>): number {
     if (this.isEmpty()) throw Exception.sequenceEmpty();
     selector ??= (x) => x as number;
-    
+
     if (percentile < 0) percentile = 0;
     if (percentile > 100) percentile = 100;
-    
+
     const sorted = this.source.slice().sort((a, b) => selector(a) - selector(b));
-    
+
     const index = Math.ceil((percentile / 100) * this.length) - 1;
-    
+
     const boundedIndex = Math.max(0, Math.min(index, this.length - 1));
-    
+
     return selector(sorted[boundedIndex]);
   }
   product(selector?: Selector<T, number>): number {
@@ -316,9 +316,11 @@ export class List<T> extends EnumerableBase<T> implements IExtendedList<T> {
     if (this.isEmpty()) throw Exception.sequenceEmpty();
     let min = this.source[0];
     let max = min;
+    let sel;
     for (const item of this.source) {
-      min = selector(item) < selector(min) ? item : min;
-      max = selector(item) > selector(max) ? item : max;
+      sel = selector(item);
+      min = sel < selector(min) ? item : min;
+      max = sel > selector(max) ? item : max;
     }
     return { min, max };
   }

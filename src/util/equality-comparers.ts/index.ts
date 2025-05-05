@@ -6,12 +6,12 @@ export class UniversalEqualityComparer<T> implements IEqualityComparer<T> {
 
   hash(item: T): string {
     if (isPrimitive(item)) {
-      return `${typeof item}_${String(item)}`;
+      return `${Tag.prim}${item}`;
     } else if (isObject(item)) {
       if (!this.objectMap.has(item)) {
         this.objectMap.set(item, ++this.idCounter);
       }
-      return `hash_${this.objectMap.get(item)}`;
+      return `${Tag.obj}${this.objectMap.get(item)}`;
     } else {
       throw new Error("Unsupported type");
     }
@@ -58,15 +58,15 @@ export function hashObject(obj: object): string {
 
 export class GroupByEqualityComparer<T> implements IEqualityComparer<T> {
   hash(item: T): string {
+    if (isPrimitive(item)) {
+      return `${Tag.prim}${item}`;
+    }
     try {
       // try to use JSON.stringify first, which is faster for most cases
-      return JSON.stringify(item);
+      return Tag.obj + JSON.stringify(item);
     } catch {
       // circular reference or other error? Use custom hash, which is a lil slower
-      if (isPrimitive(item)) {
-        return Tag.prim + item;
-      }
-      if (typeof item === "object" || typeof item === "function") {
+      if (isObject(item)) {
         return Tag.obj + hashObject(item!);
       }
       throw new Error("Unsupported key type for hashing.");
@@ -113,10 +113,11 @@ export class IdEqualityComparer<TId extends Primitive, T extends { id: TId }> im
 
 type Primitive = string | number | boolean | bigint | null | undefined;
 function isPrimitive(value: any): value is Primitive {
+  if (value == null) return true;
   const t = typeof value;
-  return (t !== "object" && t !== "function") || value === null;
+  return t === "string" || t === "number" || t === "boolean" || t === "bigint" || t === "symbol";
 }
 
 function isObject(value: any): value is object {
-  return typeof value === "object" && value !== null;
+  return Object(value) === value;
 }

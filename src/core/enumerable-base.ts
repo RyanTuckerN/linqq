@@ -151,7 +151,7 @@ export class EnumerableBase<T> implements IEnumerable<T> {
   }
 
   cast<TOut>(): IEnumerable<TOut> {
-    return Utils.cast<IEnumerable<TOut>>(this);
+    return this as unknown as IEnumerable<TOut>;
   }
 
   where(predicate: Predicate<T> | PredicateWithIndex<T>): IEnumerable<T> {
@@ -165,7 +165,7 @@ export class EnumerableBase<T> implements IEnumerable<T> {
     } else {
       iterable = where(this, predicate as Predicate<T>);
     }
-    return Utils.cast<IEnumerable<T>>(iterable);
+    return <IEnumerable<T>>iterable;
   }
 
   select<TOut>(selector: (x: T, i: number) => TOut): IEnumerable<TOut> {
@@ -178,12 +178,12 @@ export class EnumerableBase<T> implements IEnumerable<T> {
     } else {
       iterable = whereSelect(this, undefined, selector);
     }
-    return Utils.cast<IEnumerable<TOut>>(iterable);
+    return <IEnumerable<TOut>>iterable;
   }
 
   selectMany<TOut>(selector: SelectorWithIndex<T, Iterable<TOut>>): IEnumerable<TOut> {
     if (!selector) throw Exception.argumentNull("selector");
-    return Utils.cast<IEnumerable<TOut>>(selectMany<T, TOut>(this, selector));
+    return selectMany<T, TOut>(this, selector) as unknown as IEnumerable<TOut>;
   }
 
   aggregate<TAccumulate, TResult = TAccumulate>(
@@ -237,9 +237,14 @@ export class EnumerableBase<T> implements IEnumerable<T> {
     if (!outerKeySelector) throw Exception.argumentNull("outerKeySelector");
     if (!innerKeySelector) throw Exception.argumentNull("innerKeySelector");
     if (!resultSelector) throw Exception.argumentNull("resultSelector");
-    return Utils.cast<IEnumerable<TOut>>(
-      join(this, inner, outerKeySelector, innerKeySelector, resultSelector, comparer),
-    );
+    return join(
+      this,
+      inner,
+      outerKeySelector,
+      innerKeySelector,
+      resultSelector,
+      comparer,
+    ) as unknown as IEnumerable<TOut>;
   }
 
   groupJoin<TInner, TKey, TOut>(
@@ -253,9 +258,14 @@ export class EnumerableBase<T> implements IEnumerable<T> {
     if (!outerKeySelector) throw Exception.argumentNull("outerKeySelector");
     if (!innerKeySelector) throw Exception.argumentNull("innerKeySelector");
     if (!resultSelector) throw Exception.argumentNull("resultSelector");
-    return Utils.cast<IEnumerable<TOut>>(
-      groupJoin(this, inner, outerKeySelector, innerKeySelector, resultSelector, comparer),
-    );
+    return groupJoin(
+      this,
+      inner,
+      outerKeySelector,
+      innerKeySelector,
+      resultSelector,
+      comparer,
+    ) as unknown as IEnumerable<TOut>;
   }
   elementAt(index: number): T {
     return Operation.elementAt(this, index);

@@ -44,11 +44,11 @@ export class Dictionary<TK, TV, TPrev = TV>
         if (typeof propKey === "string" && !isNaN(+propKey)) {
           propKey = +propKey;
         }
-        
+
         if (!target.containsKey(propKey)) {
           return undefined;
         }
-        
+
         return target.get(propKey);
       },
       set(target, prop, value, receiver) {
@@ -120,6 +120,12 @@ export class Dictionary<TK, TV, TPrev = TV>
     return [false, undefined];
   }
 
+  public forEach(action: (kvp: KeyValuePair<TK, TV>) => void, thisArg?: any): void {
+    for (const [key, value] of this.map.entries()) {
+      action.call(thisArg, { key, value });
+    }
+  }
+
   public static createDictionary<TSource, TKey, TValue>(
     source: Iterable<TSource>,
     keySelector: (x: TSource, index: number) => TKey,
@@ -140,7 +146,7 @@ export class Dictionary<TK, TV, TPrev = TV>
       .join(", ");
     return `Dictionary(${this.map.size}): {${entries}}`;
   }
-  
+
   toJSON() {
     const obj: Record<string, TV> = {};
     for (const [key, value] of this.map.entries()) {

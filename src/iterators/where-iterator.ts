@@ -33,6 +33,6 @@ export class WhereIterator<TSource> extends IteratorBase<TSource> {
   }
 
   public override select<TOut>(selector: (x: TSource, i: number) => TOut): IEnumerable<TOut> {
-    return Utils.cast<IEnumerable<TOut>>(new WhereSelectIterator(this.source, this._predicate, selector));
+    return (new WhereSelectIterator(this.source, this._predicate, selector)) as unknown as IEnumerable<TOut>;
   }
 }

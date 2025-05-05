@@ -3,10 +3,6 @@ export class Utils {
     return source;
   }
 
-  public static cast<TOut>(source: any): TOut {
-    return source as TOut;
-  }
-
   public static ensureString(value: any): string {
     return String(value);
   }

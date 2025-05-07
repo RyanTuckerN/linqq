@@ -138,36 +138,6 @@ export interface IExtendedList<T> extends IList<T> {
   quickSort(comparator?: Comparator<T>): this;
 
   /**
-   * Sorts the List **in place** using the bubble sort algorithm.
-   * This is one of the simplest sorting algorithms but is inefficient for large datasets with time complexity O(n^2).
-   * It is stable and works well with small or mostly sorted datasets.
-   * Ideal for educational purposes or when data is already almost sorted.
-   * @param comparator A function that accepts two arguments; the function to compare two elements of the List.
-   * @returns The List after sorting.
-   */
-  bubbleSort(comparator?: Comparator<T>): this;
-
-  /**
-   * Sorts the List **in place** using the insertion sort algorithm.
-   * Efficient for small data sets or arrays that are already substantially sorted.
-   * Stable and has a simple implementation, with O(n^2) complexity in the worst case but can perform much better if the array is nearly sorted.
-   * Suitable for data sets that are continuously being added to and need to remain sorted.
-   * @param comparator A function that accepts two arguments; the function to compare two elements of the List.
-   * @returns The List after sorting.
-   */
-  insertionSort(comparator?: Comparator<T>): this;
-
-  /**
-   * Sorts the List **in place** using the selection sort algorithm.
-   * Not suitable for large lists as its average and worst-case complexity are both O(n^2), but it has the property of minimizing the number of swaps.
-   * Not stable.
-   * Can be useful when memory writes are a costly operation.
-   * @param comparator A function that accepts two arguments; the function to compare two elements of the List.
-   * @returns The List after sorting.
-   */
-  selectionSort(comparator?: Comparator<T>): this;
-
-  /**
    * Sorts the List **in place** using the heap sort algorithm.
    * Efficient for both large and small data sets with O(n log n) complexity.
    * Not stable but does not require additional memory for another array like merge sort.
@@ -177,16 +147,6 @@ export interface IExtendedList<T> extends IList<T> {
    */
   heapSort(comparator?: Comparator<T>): this;
 
-  /**
-   * Sorts the List **in place** using the shell sort algorithm.
-   * Improves on insertion sort by comparing elements far apart and then reducing the gap between elements to be compared.
-   * Complexity varies depending on the gap sequence, generally between O(n log n) and O(n^2).
-   * Not stable but more efficient than simple insertion on medium-sized lists.
-   * Good for data that does not require stable sorting and is medium-sized.
-   * @param comparator A function that accepts two arguments; the function to compare two elements of the List.
-   * @returns The List after sorting.
-   */
-  shellSort(comparator?: Comparator<T>): this;
   /**
    * Calculates the standard deviation of elements in the list, optionally transformed by a selector.
    * @param selector A function to transform list elements into numbers.

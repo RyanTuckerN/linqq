@@ -19,7 +19,8 @@ export class GeneratorUtils {
   }
 
   public static *reverse<T>(source: Iterable<T>): Iterable<T> {
-    yield* [...source].reverse(); // fastest way to reverse an iterable
+    const arr = Array.isArray(source) ? source : [...source];
+    for (let i = arr.length - 1; i >= 0; i--) yield arr[i];
   }
 
   public static *take<T>(source: Iterable<T>, count: number): Iterable<T> {
@@ -65,31 +66,43 @@ export class GeneratorUtils {
   }
 
   public static *distinct<T>(source: Iterable<T>): Iterable<T> {
-    const set = new Set<T>(source);
-    yield* set.values();
+    const seen = new Set<T>();
+    for (const v of source)
+      if (!seen.has(v)) {
+        seen.add(v);
+        yield v;
+      }
   }
 
-  public static *union<T>(source: Iterable<T>, other: Iterable<T>, comparer?: IEqualityComparer<T>) {
-    let set: ISet<T>;
-    if (comparer) {
-      set = hashSet<T>([...source, ...other], comparer);
+  public static *union<T>(a: Iterable<T>, b: Iterable<T>, cmp?: IEqualityComparer<T>) {
+    if (cmp) {
+      const set = hashSet<T>(a, cmp);
+      yield* a;
+      for (const x of b)
+        if (!set.has(x)) {
+          set.add(x);
+          yield x;
+        }
     } else {
-      set = new Set<T>([...source, ...other]);
+      const seen = new Set<T>();
+      for (const v of a)
+        if (!seen.has(v)) {
+          seen.add(v);
+          yield v;
+        }
+      for (const v of b)
+        if (!seen.has(v)) {
+          seen.add(v);
+          yield v;
+        }
     }
-    yield* set.values();
   }
 
-  public static *intersect<T>(source: Iterable<T>, other: Iterable<T>, comparer?: IEqualityComparer<T>): Iterable<T> {
-    let set: ISet<T>;
-    if (comparer) {
-      set = hashSet<T>(other, comparer);
-    } else {
-      set = new Set<T>(other);
-    }
-    for (const item of source) {
-      if (set.has(item)) yield item;
-    }
+  public static *intersect<T>(a: Iterable<T>, b: Iterable<T>, cmp?: IEqualityComparer<T>) {
+    const set = cmp ? hashSet<T>(b, cmp) : new Set<T>(b);
+    for (const v of a) if (set.has(v)) yield v;
   }
+  
   public static *except<T>(source: Iterable<T>, other: Iterable<T>, comparer?: IEqualityComparer<T>): Iterable<T> {
     let set: ISet<T>;
     if (comparer) {

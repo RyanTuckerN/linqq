@@ -3,7 +3,7 @@ import { IEqualityComparer } from "@interfaces/IEqualityComparer";
 import { Exception } from "../validator/exception";
 
 export class Operation {
-  public static aggregate<T, TAccumulate, TResult>(
+  public static aggregate<T, TAccumulate, TResult = TAccumulate>(
     source: Iterable<T>,
     seed: TAccumulate,
     func: (acc: TAccumulate, x: T) => TAccumulate,
@@ -11,36 +11,58 @@ export class Operation {
   ): TResult {
     if (!source) throw Exception.argumentNull("source");
     let acc = seed;
-    for (const item of source) {
-      acc = func(acc, item);
-    }
-    return resultSelector ? resultSelector(acc) : (acc as T & TResult);
+    for (const v of source) acc = func(acc, v);
+    return resultSelector ? resultSelector(acc) : (acc as TAccumulate & TResult);
   }
 
   public static max<T, TOut>(source: Iterable<T>, selector?: Selector<T, TOut> | undefined): TOut {
-    let max: TOut | undefined = undefined;
-    for (const item of source) {
-      const value = selector ? selector(item) : (item as unknown as TOut);
-      if (max === undefined || max === null || value > max) max = value;
+    const it = source[Symbol.iterator]();
+    let first = it.next();
+    if (first.done) throw Exception.sequenceEmpty();
+    if (selector) {
+      let best = selector(first.value);
+      for (let n = it.next(); !n.done; n = it.next()) {
+        const val = selector(n.value);
+        if (val > best) best = val;
+      }
+      return best;
     }
-    if (max === undefined || max === null) throw Exception.sequenceEmpty();
-    return max;
+    let best = first.value as unknown as TOut;
+    for (let n = it.next(); !n.done; n = it.next()) {
+      const val = n.value as unknown as TOut;
+      if (val > best) best = val;
+    }
+    return best;
   }
 
   public static min<T, TOut>(source: Iterable<T>, selector?: Selector<T, TOut> | undefined): TOut {
-    let min: TOut | undefined = undefined;
-    for (const item of source) {
-      const value = selector ? selector(item) : (item as unknown as TOut);
-      if (min === undefined || min === null || value < min) min = value;
+    const it = source[Symbol.iterator]();
+    let first = it.next();
+    if (first.done) throw Exception.sequenceEmpty();
+    if (selector) {
+      let best = selector(first.value);
+      for (let n = it.next(); !n.done; n = it.next()) {
+        const val = selector(n.value);
+        if (val < best) best = val;
+      }
+      return best;
     }
-    if (min === undefined || min === null) throw Exception.sequenceEmpty();
-    return min;
+    let best = first.value as unknown as TOut;
+    for (let n = it.next(); !n.done; n = it.next()) {
+      const val = n.value as unknown as TOut;
+      if (val < best) best = val;
+    }
+    return best;
   }
 
   public static count<T>(source: Iterable<T>, predicate?: Predicate<T> | undefined): number {
     let count = 0;
-    for (const item of source) {
-      if (!predicate || predicate(item)) count++;
+    if (predicate) {
+      for (const item of source) {
+        if (predicate(item)) count++;
+      }
+    } else {
+      for (const _ of source) count++;
     }
     return count;
   }
@@ -56,26 +78,26 @@ export class Operation {
 
   public static average<T>(source: Iterable<T>, selector?: Selector<T, number> | undefined): number {
     selector ??= (x) => x as number;
-    let sum = 0;
-    let count = 0;
-    for (const item of source) {
-      sum += selector(item);
-      count++;
+    let total = 0,
+      n = 0;
+    for (const v of source) {
+      total += selector(v);
+      n++;
     }
-    if (count === 0) throw Exception.sequenceEmpty();
-    return (sum / count) as number;
+    if (n === 0) throw Exception.sequenceEmpty();
+    return total / n;
   }
 
   public static elementAtOrDefault<T>(source: Iterable<T>, index: number): T | undefined {
     let i = 0;
-    for (const item of source) if (i++ === index) return item;
+    for (const v of source) if (i++ === index) return v;
     return undefined;
   }
 
   public static elementAt<T>(source: Iterable<T>, index: number): T {
-    const el = this.elementAtOrDefault(source, index);
-    if (el === undefined) throw Exception.indexOutOfRange();
-    return el;
+    let i = 0;
+    for (const v of source) if (i++ === index) return v;
+    throw Exception.indexOutOfRange();
   }
 
   public static first<T>(source: Iterable<T>, predicate?: Predicate<T> | undefined): T {
@@ -85,8 +107,10 @@ export class Operation {
   }
 
   public static firstOrDefault<T>(source: Iterable<T>, predicate?: Predicate<T> | undefined): T | undefined {
-    for (const item of source) {
-      if (!predicate || predicate(item)) return item;
+    if (predicate) {
+      for (const item of source) if (predicate(item)) return item;
+    } else {
+      for (const item of source) return item;
     }
     return undefined;
   }
@@ -99,8 +123,10 @@ export class Operation {
 
   public static lastOrDefault<T>(source: Iterable<T>, predicate?: Predicate<T> | undefined): T | undefined {
     let last;
-    for (const item of source) {
-      if (!predicate || predicate(item)) last = item;
+    if (predicate) {
+      for (const item of source) if (predicate(item)) last = item;
+    } else {
+      for (const item of source) last = item;
     }
     return last;
   }
@@ -113,8 +139,15 @@ export class Operation {
 
   public static singleOrDefault<T>(source: Iterable<T>, predicate?: Predicate<T>): T | undefined {
     let found: T | undefined = undefined;
-    for (const item of source) {
-      if (!predicate || predicate(item)) {
+    if (predicate) {
+      for (const item of source) {
+        if (predicate(item)) {
+          if (found !== undefined) throw Exception.moreThanOne();
+          found = item;
+        }
+      }
+    } else {
+      for (const item of source) {
         if (found !== undefined) throw Exception.moreThanOne();
         found = item;
       }
@@ -124,8 +157,15 @@ export class Operation {
 
   public static any<T>(source: Iterable<T>, predicate?: PredicateWithIndex<T> | undefined): boolean {
     let i = 0;
-    for (const item of source) {
-      if (!predicate || predicate(item, i++)) return true;
+    const usePred = !!predicate;
+    if (usePred) {
+      for (const item of source) {
+        if (predicate(item, i++)) return true;
+      }
+    } else {
+      for (const item of source) {
+        if (item) return true;
+      }
     }
     return false;
   }
@@ -138,13 +178,9 @@ export class Operation {
 
   public static contains<T>(source: Iterable<T>, element: T, comparer?: IEqualityComparer<T>): boolean {
     if (comparer) {
-      for (const item of source) {
-        if (comparer.equals(item, element)) return true;
-      }
+      for (const item of source) if (comparer.equals(item, element)) return true;
     } else {
-      for (const item of source) {
-        if (item === element) return true;
-      }
+      for (const item of source) if (item === element) return true;
     }
     return false;
   }
@@ -152,16 +188,15 @@ export class Operation {
   public static sequenceEqual<T>(source: Iterable<T>, other: Iterable<T>, comparer?: IEqualityComparer<T>): boolean {
     const it1 = source[Symbol.iterator]();
     const it2 = other[Symbol.iterator]();
+    const cmp = !!comparer;
+    const eq = comparer?.equals;
+
     while (true) {
-      const el1 = it1.next();
-      const el2 = it2.next();
-      if (el1.done !== el2.done) return false;
-      if (el1.done) return true;
-      if (comparer) {
-        if (!comparer.equals(el1.value, el2.value)) return false;
-      } else {
-        if (el1.value !== el2.value) return false;
-      }
+      const a = it1.next();
+      const b = it2.next();
+      if (a.done !== b.done) return false;
+      if (a.done) return true;
+      if (cmp ? !eq!(a.value, b.value) : a.value !== b.value) return false;
     }
   }
 }

@@ -93,64 +93,9 @@ export class Sort {
     return i;
   }
 
-  public static bubbleSort<T>(array: T[], comparator: Comparator<T> = defaultComparator): T[] {
-    const len = array.length;
-    for (let i = 0; i < len; i++) {
-      for (let j = 0; j < len - i - 1; j++) {
-        if (comparator(array[j], array[j + 1]) > 0) {
-          [array[j], array[j + 1]] = [array[j + 1], array[j]];
-        }
-      }
-    }
-    return array;
-  }
-
-  public static insertionSort<T>(array: T[], comparator: Comparator<T> = defaultComparator): T[] {
-    const len = array.length;
-    for (let i = 1; i < len; i++) {
-      let j = i;
-      while (j > 0 && comparator(array[j - 1], array[j]) > 0) {
-        [array[j - 1], array[j]] = [array[j], array[j - 1]];
-        j--;
-      }
-    }
-    return array;
-  }
-
-  public static selectionSort<T>(array: T[], comparator: Comparator<T> = defaultComparator): T[] {
-    const len = array.length;
-    for (let i = 0; i < len; i++) {
-      let min = i;
-      for (let j = i + 1; j < len; j++) {
-        if (comparator(array[min], array[j]) > 0) {
-          min = j;
-        }
-      }
-      if (min !== i) {
-        [array[i], array[min]] = [array[min], array[i]];
-      }
-    }
-    return array;
-  }
-
   public static heapSort<T>(array: T[], comparator: Comparator<T> = defaultComparator): T[] {
     let heap = new MaxHeap(array, comparator);
     heap.sort();
-    return array;
-  }
-
-  public static shellSort<T>(array: T[], comparator: Comparator<T> = defaultComparator): T[] {
-    const len = array.length;
-    for (let gap = Math.floor(len / 2); gap > 0; gap = Math.floor(gap / 2)) {
-      for (let i = gap; i < len; i++) {
-        let temp = array[i];
-        let j = i;
-        for (; j >= gap && comparator(array[j - gap], temp) > 0; j -= gap) {
-          array[j] = array[j - gap];
-        }
-        array[j] = temp;
-      }
-    }
     return array;
   }
 
@@ -203,58 +148,6 @@ export class Sort {
     for (let i = 0; i < array.length; i++) {
       array[i] = output[i];
     }
-  }
-
-  public static radixSortIdx(keys: Uint32Array, idx: number[]) {
-    if (idx.length === 0) return;
-
-    const out = new Array(idx.length);
-    const count = new Uint32Array(256); // 1 KB, zero‑filled
-
-    for (let shift = 0; shift < 32; shift += 8) {
-      count.fill(0);
-
-      for (let k = 0; k < idx.length; k++) {
-        count[(keys[idx[k]] >>> shift) & 0xff]++;
-      }
-
-      for (let i = 1; i < 256; i++) count[i] += count[i - 1];
-
-      for (let k = idx.length - 1; k >= 0; k--) {
-        const i = idx[k];
-        const digit = (keys[i] >>> shift) & 0xff;
-        out[--count[digit]] = i;
-      }
-
-      for (let i = 0; i < idx.length; i++) idx[i] = out[i];
-    }
-  }
-
-  public static bucketSort(array: number[], bucketSize = 5): number[] {
-    if (array.length === 0) {
-      return array;
-    }
-
-    const minValue = Math.min(...array);
-    const maxValue = Math.max(...array);
-
-    const bucketCount = Math.floor((maxValue - minValue) / bucketSize) + 1;
-    const buckets: number[][] = new Array(bucketCount);
-    for (let i = 0; i < buckets.length; i++) {
-      buckets[i] = [];
-    }
-
-    array.forEach((currentVal) => {
-      buckets[Math.floor((currentVal - minValue) / bucketSize)].push(currentVal);
-    });
-
-    array.length = 0;
-    buckets.forEach((bucket) => {
-      this.insertionSort(bucket);
-      array.push(...bucket);
-    });
-
-    return array;
   }
 }
 

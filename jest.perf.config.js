@@ -1,10 +1,9 @@
 module.exports = {
   preset: "ts-jest",
   testEnvironment: "node",
-  verbose: true,
-  maxWorkers: 1,
-  testMatch: ['**/?(*.)test.ts'],
-  testPathIgnorePatterns: ['\\.perf\\.test\\.ts$'],
+  verbose: false,
+  maxWorkers: 4, // Set to 4 to allow parallel execution of tests
+  testMatch: ['**/*.perf.test.ts'],
   transform: {
     "^.+\\.ts$": [
       "ts-jest",

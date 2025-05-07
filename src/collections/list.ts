@@ -1,6 +1,5 @@
 import { EnumerableBase } from "@core/enumerable-base";
 import { defaultComparator, Sort } from "src/operations/sort";
-import { Utils } from "src/util";
 import { Exception } from "src/validator/exception";
 import type { IDictionary } from "@interfaces/IDictionary";
 import type { IEnumerable } from "@interfaces/IEnumerable";
@@ -36,6 +35,7 @@ export class List<T> extends EnumerableBase<T> implements IExtendedList<T> {
   }
 
   get(index: number): T {
+    if (!this.hasIndex(index)) throw Exception.indexOutOfRange();
     return this.source[index];
   }
 
@@ -210,24 +210,9 @@ export class List<T> extends EnumerableBase<T> implements IExtendedList<T> {
     Sort.quickSort(this.source, comparator);
     return this;
   }
-  bubbleSort(comparator?: Comparator<T>): this {
-    Sort.bubbleSort(this.source, comparator);
-    return this;
-  }
-  insertionSort(comparator?: Comparator<T>): this {
-    Sort.insertionSort(this.source, comparator);
-    return this;
-  }
-  selectionSort(comparator?: Comparator<T>): this {
-    Sort.selectionSort(this.source, comparator);
-    return this;
-  }
+
   heapSort(comparator?: Comparator<T>): this {
     Sort.heapSort(this.source, comparator);
-    return this;
-  }
-  shellSort(comparator?: Comparator<T>): this {
-    Sort.shellSort(this.source, comparator);
     return this;
   }
   stdDeviation(selector?: Selector<T, number>): number {

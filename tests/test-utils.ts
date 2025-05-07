@@ -14,6 +14,7 @@ type SingleResult = {
   maxTimeMs: number;
   avgMemMb: number;
   maxMemMb: number;
+  functionStr: string;
 };
 
 type BenchmarkTest<TInput, TResult> = {
@@ -23,6 +24,7 @@ type BenchmarkTest<TInput, TResult> = {
   linqq: (input: TInput) => TResult;
   native: (input: TInput) => TResult;
   iterations?: number;
+  quiet?: boolean;
 };
 
 const RESULTS_PATH = "./benchmarks/benchmark-results.json";
@@ -33,7 +35,9 @@ function getMemoryUsage(): number {
 
 export async function benchmarkCompare<TInput, TResult>(test: BenchmarkTest<TInput, TResult>): Promise<void> {
   const iterations = test.iterations ?? 10;
-  console.log(`\nRunning ${iterations} iterations for "${test.label}"...`);
+  const quiet = test.quiet ?? false;
+  const log = !quiet ? console.log : (...args: any[]) => {};
+  log(`\nRunning ${iterations} iterations for "${test.label}"...`);
 
   const memSupported = typeof process !== "undefined" && typeof process.memoryUsage === "function";
 
@@ -73,7 +77,7 @@ export async function benchmarkCompare<TInput, TResult>(test: BenchmarkTest<TInp
     const avgMem = mems.average();
     const maxMem = mems.max();
 
-    console.log(
+    log(
       `✅ ${name}: ran ${iterations} times. Avg: ${formatMs(avgTime)} (Min: ${formatMs(minTime)}, Max: ${formatMs(maxTime)}), Mem: ~${formatBytes(avgMem)} avg, up to ${formatBytes(maxMem)} max.`,
     );
 
@@ -83,6 +87,7 @@ export async function benchmarkCompare<TInput, TResult>(test: BenchmarkTest<TInp
       maxTimeMs: maxTime,
       avgMemMb: avgMem,
       maxMemMb: maxMem,
+      functionStr: fn.toString(),
     };
   }
 
@@ -96,10 +101,10 @@ export async function benchmarkCompare<TInput, TResult>(test: BenchmarkTest<TInp
     native: nativeRes,
   };
 
-  dumpResult(newResult);
+  dumpResult(newResult, log);
 }
 
-function dumpResult(newResult: BenchmarkResult) {
+function dumpResult(newResult: BenchmarkResult, log: (message: string) => void): void {
   const outDir = "./benchmarks";
   if (!existsSync(outDir)) {
     mkdirSync(outDir);
@@ -124,10 +129,13 @@ function dumpResult(newResult: BenchmarkResult) {
 
   writeFileSync(RESULTS_PATH, JSON.stringify(allResults, null, 2), "utf-8");
   const linqFaster = newResult.linqq.avgTimeMs < newResult.native.avgTimeMs;
-  const diff = Math.abs(newResult.linqq.avgTimeMs - newResult.native.avgTimeMs);
-  const diffMagnitude = (diff / newResult.native.avgTimeMs).toFixed(2);
+  const diffMagnitude = (
+    linqFaster
+      ? newResult.native.avgTimeMs / newResult.linqq.avgTimeMs
+      : newResult.linqq.avgTimeMs / newResult.native.avgTimeMs
+  ).toFixed(2);
 
-  console.log(linqFaster ? `Linqq is ${diffMagnitude}x faster` : `Native is ${diffMagnitude}x faster`);
+  log(linqFaster ? `Linqq is ${diffMagnitude}x faster` : `Native is ${diffMagnitude}x faster`);
 }
 
 function formatMs(ms: number): string {

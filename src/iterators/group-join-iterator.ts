@@ -6,7 +6,7 @@ import { Selector } from "src/types";
 import { UniversalEqualityComparer } from "src/util/equality-comparers.ts";
 
 export class GroupJoinIterator<TOuter, TInner, TKey, TResult> extends IteratorBase<TOuter, TResult> {
-  private lookup: Lookup<TKey, TInner> | null = null; // built on first use
+  private lookup: Lookup<TKey, TInner> | null = null;
 
   constructor(
     source: Iterable<TOuter>,
@@ -22,22 +22,16 @@ export class GroupJoinIterator<TOuter, TInner, TKey, TResult> extends IteratorBa
   public moveNext(): boolean {
     this.lookup ??= Lookup.build(this.inner, this.innerKeySelector, (x) => x, this.comparer);
 
-    let outer; // iterator result cache
+    let outer: IteratorResult<TOuter>;
     while (!(outer = this.sourceIterator.next()).done) {
-      const key = this.outerKeySelector(outer.value); // compute outer key
-      const group = this.lookup.getGrouping(key, false) ?? []; // fetch matching inners
-      this.current = this.resultSelector(
-        // create TResult
-        outer.value,
-        EnumerableBase.from(group), // wrap array lazily
-      );
-      return true; // emit one result per outer
+      const group = this.lookup.getGrouping(this.outerKeySelector(outer.value), false) ?? []; // fetch matching inners
+      this.current = this.resultSelector(outer.value, EnumerableBase.from(group));
+      return true;
     }
-    return false; // no more outers
+    return false;
   }
 
   public clone(): GroupJoinIterator<TOuter, TInner, TKey, TResult> {
-    // same parameters, comparer forwarded
     return new GroupJoinIterator(
       this.source,
       this.inner,

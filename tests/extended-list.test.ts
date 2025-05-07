@@ -255,16 +255,7 @@ test("window()", () => {
 
 test("sorting methods", () => {
   const getUnsorted = () => linqq([5, 3, 1, 4, 2]).toExtendedList();
-  const methods = [
-    "sort",
-    "mergeSort",
-    "quickSort",
-    "bubbleSort",
-    "insertionSort",
-    "selectionSort",
-    "heapSort",
-    "shellSort",
-  ] as const;
+  const methods = ["sort", "mergeSort", "quickSort", "heapSort"] as const;
 
   for (const method of methods) {
     const list = getUnsorted();

@@ -7,10 +7,10 @@ import { UniversalEqualityComparer } from "src/util/equality-comparers.ts";
 
 export class JoinIterator<TOuter, TInner, TKey, TResult> extends IteratorBase<TOuter, TResult> {
   private lookup: Lookup<TKey, TInner> | null = null;
-  private outerIter = this.sourceIterator; // alias for clarity
-  private innerIdx = 0; // position in current group
-  private currentInners: TInner[] | null = null; // cached current group
-  private lastOuter: TOuter | null = null; // last outer element
+  private outerIter = this.sourceIterator;
+  private innerIdx = 0;
+  private currentInners: TInner[] | null = null;
+  private lastOuter: TOuter | null = null;
 
   constructor(
     source: Iterable<TOuter>,
@@ -23,27 +23,23 @@ export class JoinIterator<TOuter, TInner, TKey, TResult> extends IteratorBase<TO
     super(source);
   }
   public moveNext(): boolean {
-    /* build lookup once */
     if (!this.lookup) {
       this.lookup = Lookup.build(this.inner, this.innerKeySelector, (x) => x, this.comparer);
     }
 
     while (true) {
-      /* still iterating current inner group? */
       if (this.currentInners && this.innerIdx < this.currentInners.length) {
         const innerItem = this.currentInners[this.innerIdx++];
         this.current = this.resultSelector(this.lastOuter!, innerItem);
         return true;
       }
 
-      /* fetch next outer element */
       const n = this.outerIter.next();
       if (n.done) return false;
 
       this.lastOuter = n.value;
       const key = this.outerKeySelector(this.lastOuter);
 
-      /* find matching inner group */
       this.currentInners = this.lookup.getGrouping(key, /* create = */ false) ?? null;
       this.innerIdx = 0;
     }

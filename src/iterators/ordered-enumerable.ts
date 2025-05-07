@@ -1,7 +1,6 @@
 import { IteratorBase } from "@core/enumerable-base";
 import { IOrderedEnumerable } from "@interfaces/IOrderedEnumerable";
 import { Sorter } from "src/types";
-import { Sort } from "src/operations/sort";
 import { createList } from "@factories/collection-factory";
 import { IList } from "@interfaces/IList";
 
@@ -81,7 +80,7 @@ export class OrderedEnumerable<T> extends IteratorBase<T> implements IOrderedEnu
       if (isUInt32) {
         const idx = new Array<number>(n);
         for (let i = 0; i < n; i++) idx[i] = i;
-        Sort.radixSortIdx(keys32, idx);
+        this.radixSortIdx(keys32, idx);
         this.sorted = idx.map((i) => src[i]);
         if (descending) this.sorted.reverse();
         return;
@@ -110,8 +109,8 @@ export class OrderedEnumerable<T> extends IteratorBase<T> implements IOrderedEnu
       if (isDate) {
         const idx = new Array<number>(n);
         for (let i = 0; i < n; i++) idx[i] = i;
-        Sort.radixSortIdx(lo, idx);
-        Sort.radixSortIdx(hi!, idx);
+        this.radixSortIdx(lo, idx);
+        this.radixSortIdx(hi!, idx);
         this.sorted = idx.map((i) => src[i]);
         if (descending) this.sorted.reverse();
         return;
@@ -145,5 +144,37 @@ export class OrderedEnumerable<T> extends IteratorBase<T> implements IOrderedEnu
       return 0;
     });
     this.sorted = idx.map((i) => src[i]);
+  }
+
+  /**
+   * Stable **LSD radix‑256** sorter that re‑orders an *index array* (`idx`)
+   * according to the unsigned 32‑bit keys stored in a parallel `Uint32Array`.
+   */
+  private radixSortIdx(keys: Uint32Array, idx: number[]): void {
+    if (idx.length === 0) return; // no‑op on empty input
+
+    const out = new Array<number>(idx.length); // scratch permutation
+    const count = new Uint32Array(256); // 256 buckets, zero‑init
+
+    for (let shift = 0; shift < 32; shift += 8) {
+      // 4 byte passes
+      count.fill(0); // step 1 – reset histogram
+
+      // step 2 – histogram
+      for (let k = 0; k < idx.length; k++) count[(keys[idx[k]] >>> shift) & 0xff]++;
+
+      // step 3 – exclusive prefix‑sum
+      for (let i = 1; i < 256; i++) count[i] += count[i - 1];
+
+      // step 4 – stable reverse scan into out[]
+      for (let k = idx.length - 1; k >= 0; k--) {
+        const i = idx[k];
+        const digit = (keys[i] >>> shift) & 0xff;
+        out[--count[digit]] = i;
+      }
+
+      // step 5 – copy out → idx for next byte pass
+      for (let i = 0; i < idx.length; i++) idx[i] = out[i];
+    }
   }
 }

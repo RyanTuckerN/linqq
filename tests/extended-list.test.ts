@@ -22,6 +22,7 @@ test("partition()", () => {
 
   const emptyList = linqq<number>([]).toExtendedList();
   const [empty1, empty2] = emptyList.partition((x) => x % 2 === 0);
+
   expect(empty1.toArray()).toEqual([]);
   expect(empty2.toArray()).toEqual([]);
 });
@@ -88,7 +89,6 @@ test("deepClone()", () => {
 
   expect(clone.toArray()).toEqual(objList.toArray());
   expect(clone.toArray()[0]).not.toBe(objList.toArray()[0]);
-
   objList.toArray()[0].a = 10;
   expect(clone.toArray()[0].a).toBe(1);
 });
@@ -268,6 +268,7 @@ test("sorting methods", () => {
   expect(descList.toArray()).toEqual([5, 4, 3, 2, 1]);
 
   const empty = linqq.empty().toExtendedList();
+
   for (const method of methods) {
     empty[method]();
     expect(empty.toArray()).toEqual([]);

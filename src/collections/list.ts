@@ -136,7 +136,6 @@ export class List<T> extends EnumerableBase<T> implements IExtendedList<T> {
     const len = this.length;
     const normalizedSteps = ((steps % len) + len) % len; // Handle negative steps
     if (normalizedSteps === 0) return this;
-
     if (normalizedSteps > 0) {
       this.source.unshift(...this.source.splice(len - normalizedSteps, normalizedSteps));
     } else {

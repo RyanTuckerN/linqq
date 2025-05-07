@@ -210,7 +210,6 @@ export class List<T> extends EnumerableBase<T> implements IExtendedList<T> {
     Sort.quickSort(this.source, comparator);
     return this;
   }
-
   heapSort(comparator?: Comparator<T>): this {
     Sort.heapSort(this.source, comparator);
     return this;
@@ -231,24 +230,7 @@ export class List<T> extends EnumerableBase<T> implements IExtendedList<T> {
   mode(selector?: Selector<T, number>): number {
     if (this.isEmpty()) throw Exception.sequenceEmpty();
     selector ??= (x) => x as number;
-
-    const valueFreq = new Map<number, number>();
-    for (const item of this.source) {
-      const value = selector(item);
-      valueFreq.set(value, (valueFreq.get(value) || 0) + 1);
-    }
-
-    let maxFreq = 0;
-    let mode: number | null = null;
-
-    for (const [value, freq] of valueFreq.entries()) {
-      if (freq > maxFreq) {
-        maxFreq = freq;
-        mode = value;
-      }
-    }
-
-    return mode!;
+    return this.groupBy(selector).max((g) => g.count());
   }
   variance(selector?: Selector<T, number>): number {
     if (this.isEmpty()) throw Exception.sequenceEmpty();

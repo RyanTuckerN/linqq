@@ -72,7 +72,7 @@ export interface IExtendedList<T> extends IList<T> {
    * @param pageNumber The page number to retrieve.
    * @returns A new List paginated by a specified page size and number.
    */
-  paginate(pageSize: number, pageNumber: number): IExtendedList<T>;
+  paginate(pageSize: number, pageNumber?: number): IExtendedList<T>;
   /**
    * Returns a map of each unique item in the list to its frequency count.
    * @returns A dictionary of each unique item in the list to its frequency count.

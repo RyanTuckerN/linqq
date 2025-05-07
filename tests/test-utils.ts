@@ -45,35 +45,31 @@ export async function benchmarkCompare<TInput, TResult>(test: BenchmarkTest<TInp
     const times = linqq.empty<number>().toExtendedList();
     const mems = linqq.empty<number>().toExtendedList();
 
-    linqq
-      .range(0, iterations)
-      .toList()
-      .forEach((i) => {
-        const input = test.prepareInput();
+    for (const i of linqq.range(0, iterations)) {
+      const input = test.prepareInput();
 
-        const startMem = memSupported ? getMemoryUsage() : 0;
-        const start = performance.now();
+      const startMem = memSupported ? getMemoryUsage() : 0;
+      const start = performance.now();
 
-        const result = fn(input);
+      const result = fn(input);
 
-        const end = performance.now();
-        const endMem = memSupported ? getMemoryUsage() : 0;
+      const end = performance.now();
+      const endMem = memSupported ? getMemoryUsage() : 0;
 
-        times.add(end - start);
-        mems.add((endMem - startMem) / (1024 * 1024));
+      times.add(end - start);
+      mems.add((endMem - startMem) / (1024 * 1024));
 
-        // Optionally check correctness
-        if (test.expected) {
-          const expected = test.expected(input);
-          if (JSON.stringify(result) !== JSON.stringify(expected)) {
-            console.warn(`⚠️ ${name} implementation produced incorrect result on iteration ${i + 1}`);
-          }
+      // Optionally check correctness
+      if (test.expected) {
+        const expected = test.expected(input);
+        if (JSON.stringify(result) !== JSON.stringify(expected)) {
+          console.warn(`⚠️ ${name} implementation produced incorrect result on iteration ${i + 1}`);
         }
-      });
+      }
+    }
 
-    const avgTime = times.average();
     const { min: minTime, max: maxTime } = times.minMax();
-
+    const avgTime = times.average();
     const avgMem = mems.average();
     const maxMem = mems.max();
 

@@ -28,7 +28,7 @@ export class GroupingIterator<TKey, TSource, TNext = TSource> extends IteratorBa
     return true;
   }
   clone() {
-    return this.constructor(this.source, this.keySel, this.elemSel, this.cmp);
+    return new GroupingIterator(this.source, this.keySel, this.elemSel, this.cmp);
   }
 }
 

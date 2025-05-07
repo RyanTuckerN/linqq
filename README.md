@@ -30,20 +30,8 @@ linqq is heavily inspired by Microsoft's LINQ (Language Integrated Query) and pr
 
 To get started with linqq, install it via npm:
 
-linqq was created as an exercise and is not currently available on npm. To install it, you can clone the repository and build it locally.
-
 ```bash
-git clone https://github.com/RyanTuckerN/linqq.git
-cd linqq
-npm install
-npm run build
-npm link
-```
-
-Then in your project:
-
-```bash
-npm link linqq
+npm install linqq
 ```
 
 Then import it in your project files:

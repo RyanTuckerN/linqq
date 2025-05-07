@@ -1,7 +1,7 @@
 {
   "name": "linqq",
   "version": "1.0.0",
-  "description": "Why use arrays when you can use linqq?",
+  "description": "Why use arrays when you can use linqq? Full LINQ implementation for JavaScript & TypeScript. Powerful iterable utilities inspired by .NET's LINQ",
   "files": [
     "dist",
     "README.md",
@@ -10,7 +10,8 @@
   "scripts": {
     "test": "jest",
     "test:perf": "jest --config jest.perf.config.js",
-    "build": "tsup"
+    "build": "tsup",
+    "prepublishOnly": "npm run build"
   },
   "keywords": [
     "linq",
@@ -28,10 +29,11 @@
   "module": "dist/index.mjs",
   "exports": {
     "require": "./dist/index.js",
-    "import": "./dist/index.mjs"
+    "import": "./dist/index.mjs",
+    "default": "./dist/index.mjs"
   },
   "author": "Ryan Tucker",
-  "license": "ISC",
+  "license": "MIT",
   "devDependencies": {
     "@types/jest": "^29.5.12",
     "eslint": "^9.1.1",

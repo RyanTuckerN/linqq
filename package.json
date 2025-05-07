@@ -1,6 +1,6 @@
 {
   "name": "linqq",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Why use arrays when you can use linqq? Full LINQ implementation for JavaScript & TypeScript. Powerful iterable utilities inspired by .NET's LINQ",
   "files": [
     "dist",
@@ -24,6 +24,14 @@
     "javascript",
     "typescript"
   ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ryantuckern/linqq.git"
+  },
+  "bugs": {
+    "url": "https://github.com/ryantuckern/linqq/issues"
+  },
+  "homepage": "https://github.com/ryantuckern/linqq#readme",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "module": "dist/index.mjs",

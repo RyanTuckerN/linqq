@@ -7,6 +7,10 @@ import { UniversalEqualityComparer } from "src/util/equality-comparers.ts";
 
 export class JoinIterator<TOuter, TInner, TKey, TResult> extends IteratorBase<TOuter, TResult> {
   private lookup: Lookup<TKey, TInner> | null = null;
+  private outerIter = this.sourceIterator;
+  private innerIdx = 0;
+  private currentInners: TInner[] | null = null;
+  private lastOuter: TOuter | null = null;
 
   constructor(
     source: Iterable<TOuter>,
@@ -19,19 +23,26 @@ export class JoinIterator<TOuter, TInner, TKey, TResult> extends IteratorBase<TO
     super(source);
   }
   public moveNext(): boolean {
-    this.lookup ??= Lookup.create(this.inner, this.innerKeySelector, (x) => x, this.comparer);
-    let result;
-    while (!(result = this.sourceIterator.next()).done) {
-      const key = this.outerKeySelector(result.value);
-      const inners = this.lookup.getGrouping(key, false);
-      if (inners) {
-        for (const innerItem of inners) {
-          this.current = this.resultSelector(result.value, innerItem);
-          return true;
-        }
-      }
+    if (!this.lookup) {
+      this.lookup = Lookup.build(this.inner, this.innerKeySelector, (x) => x, this.comparer);
     }
-    return false;
+
+    while (true) {
+      if (this.currentInners && this.innerIdx < this.currentInners.length) {
+        const innerItem = this.currentInners[this.innerIdx++];
+        this.current = this.resultSelector(this.lastOuter!, innerItem);
+        return true;
+      }
+
+      const n = this.outerIter.next();
+      if (n.done) return false;
+
+      this.lastOuter = n.value;
+      const key = this.outerKeySelector(this.lastOuter);
+
+      this.currentInners = this.lookup.getGrouping(key, /* create = */ false) ?? null;
+      this.innerIdx = 0;
+    }
   }
 
   public clone(): JoinIterator<TOuter, TInner, TKey, TResult> {

@@ -9,7 +9,7 @@ import type {
   IExtendedList,
   IHashSet,
 } from "@interfaces";
-import { Generator } from "../operations/generator";
+import { GeneratorUtils } from "../operations/generator";
 import { Operation } from "../operations/operation";
 import { Exception } from "../validator/exception";
 import { Utils } from "../util";
@@ -38,8 +38,8 @@ export class EnumerableBase<T> implements IEnumerable<T> {
   }
   protected constructor(protected source: Iterable<T>) {}
 
-  *[Symbol.iterator](): IterableIterator<T> {
-    yield* this.source;
+  [Symbol.iterator](): IterableIterator<T> {
+    return this.source[Symbol.iterator]() as IterableIterator<T>;
   }
 
   /**
@@ -70,7 +70,7 @@ export class EnumerableBase<T> implements IEnumerable<T> {
   public static repeat<T>(element: T, count: number): IEnumerable<T> {
     if (count < 0) return EnumerableBase.empty<T>();
     count = Math.floor(count);
-    return generator<T>(() => Generator.repeat(element, count));
+    return generator<T>(() => GeneratorUtils.repeat(element, count));
   }
 
   /**
@@ -87,7 +87,7 @@ export class EnumerableBase<T> implements IEnumerable<T> {
   public static range(start: number, count: number): IEnumerable<number> {
     (start = Math.floor(start)), (count = Math.floor(count));
     if (count < 0) return EnumerableBase.empty<number>();
-    return generator<number>(() => Generator.range(start, count));
+    return generator<number>(() => GeneratorUtils.range(start, count));
   }
 
   /**
@@ -119,7 +119,7 @@ export class EnumerableBase<T> implements IEnumerable<T> {
     if (!predicate) throw Exception.argumentNull("predicate");
     if (!selector) throw Exception.argumentNull("selector");
     if (!action) throw Exception.argumentNull("action");
-    return generator<TOut>(() => Generator.generateFrom({ initial, predicate, selector, action }));
+    return generator<TOut>(() => GeneratorUtils.generateFrom({ initial, predicate, selector, action }));
   }
 
   toString(): string {
@@ -127,17 +127,15 @@ export class EnumerableBase<T> implements IEnumerable<T> {
   }
 
   ensureList(): IList<T> {
-    if (isList<T>(this)) return this;
     return this.toList();
   }
 
   toList(): IList<T> {
-    if (isList<T>(this)) return this;
-    return list(this);
+    return isList<T>(this) ? this : Array.isArray(this.source) ? list(this.source) : list(this); // iterate lazily only when required
   }
 
   toExtendedList(): IExtendedList<T> {
-    return <IExtendedList<T>>list(this); // All Lists are ExtendedLists, but we only expose the interface if it's explicitly requested since it has a lot of extra methods.
+    return <IExtendedList<T>>this.toList(); // All Lists are ExtendedLists, but we only expose the interface if it's explicitly requested since it has a lot of extra methods.
   }
 
   toArray(): T[] {
@@ -153,12 +151,12 @@ export class EnumerableBase<T> implements IEnumerable<T> {
   }
 
   cast<TOut>(): IEnumerable<TOut> {
-    return Utils.cast<IEnumerable<TOut>>(this);
+    return this as unknown as IEnumerable<TOut>;
   }
 
   where(predicate: Predicate<T> | PredicateWithIndex<T>): IEnumerable<T> {
     if (!predicate) throw Exception.argumentNull("predicate");
-    if (predicate.length > 1) return generator<T>(() => Generator.where(this, predicate));
+    if (predicate.length > 1) return generator<T>(() => GeneratorUtils.where(this, predicate));
     let iterable: IEnumerable<T> | any;
     if (Array.isArray(this.source)) {
       iterable = whereArray(this.source, predicate as Predicate<T>);
@@ -167,7 +165,7 @@ export class EnumerableBase<T> implements IEnumerable<T> {
     } else {
       iterable = where(this, predicate as Predicate<T>);
     }
-    return Utils.cast<IEnumerable<T>>(iterable);
+    return <IEnumerable<T>>iterable;
   }
 
   select<TOut>(selector: (x: T, i: number) => TOut): IEnumerable<TOut> {
@@ -180,12 +178,12 @@ export class EnumerableBase<T> implements IEnumerable<T> {
     } else {
       iterable = whereSelect(this, undefined, selector);
     }
-    return Utils.cast<IEnumerable<TOut>>(iterable);
+    return <IEnumerable<TOut>>iterable;
   }
 
   selectMany<TOut>(selector: SelectorWithIndex<T, Iterable<TOut>>): IEnumerable<TOut> {
     if (!selector) throw Exception.argumentNull("selector");
-    return Utils.cast<IEnumerable<TOut>>(selectMany<T, TOut>(this, selector));
+    return selectMany<T, TOut>(this, selector) as unknown as IEnumerable<TOut>;
   }
 
   aggregate<TAccumulate, TResult = TAccumulate>(
@@ -239,9 +237,14 @@ export class EnumerableBase<T> implements IEnumerable<T> {
     if (!outerKeySelector) throw Exception.argumentNull("outerKeySelector");
     if (!innerKeySelector) throw Exception.argumentNull("innerKeySelector");
     if (!resultSelector) throw Exception.argumentNull("resultSelector");
-    return Utils.cast<IEnumerable<TOut>>(
-      join(this, inner, outerKeySelector, innerKeySelector, resultSelector, comparer),
-    );
+    return join(
+      this,
+      inner,
+      outerKeySelector,
+      innerKeySelector,
+      resultSelector,
+      comparer,
+    ) as unknown as IEnumerable<TOut>;
   }
 
   groupJoin<TInner, TKey, TOut>(
@@ -255,9 +258,14 @@ export class EnumerableBase<T> implements IEnumerable<T> {
     if (!outerKeySelector) throw Exception.argumentNull("outerKeySelector");
     if (!innerKeySelector) throw Exception.argumentNull("innerKeySelector");
     if (!resultSelector) throw Exception.argumentNull("resultSelector");
-    return Utils.cast<IEnumerable<TOut>>(
-      groupJoin(this, inner, outerKeySelector, innerKeySelector, resultSelector, comparer),
-    );
+    return groupJoin(
+      this,
+      inner,
+      outerKeySelector,
+      innerKeySelector,
+      resultSelector,
+      comparer,
+    ) as unknown as IEnumerable<TOut>;
   }
   elementAt(index: number): T {
     return Operation.elementAt(this, index);
@@ -292,7 +300,7 @@ export class EnumerableBase<T> implements IEnumerable<T> {
   }
 
   reverse(): IEnumerable<T> {
-    return generator(() => Generator.reverse(this));
+    return generator(() => GeneratorUtils.reverse(this));
   }
 
   append(element: T): IEnumerable<T> {
@@ -313,57 +321,57 @@ export class EnumerableBase<T> implements IEnumerable<T> {
 
   take(count: number): IEnumerable<T> {
     if (count < 0) count = 0;
-    return generator(() => Generator.take(this, count));
+    return generator(() => GeneratorUtils.take(this, count));
   }
 
   takeWhile(predicate: PredicateWithIndex<T>): IEnumerable<T> {
     if (!predicate) throw Exception.argumentNull("predicate");
-    return generator(() => Generator.takeWhile(this, predicate));
+    return generator(() => GeneratorUtils.takeWhile(this, predicate));
   }
 
   skip(count: number): IEnumerable<T> {
     count = Math.floor(count);
     if (count < 0) count = 0;
-    return generator(() => Generator.skip(this, count));
+    return generator(() => GeneratorUtils.skip(this, count));
   }
 
   skipWhile(predicate: PredicateWithIndex<T>): IEnumerable<T> {
     if (!predicate) throw Exception.argumentNull("predicate");
-    return generator(() => Generator.skipWhile(this, predicate));
+    return generator(() => GeneratorUtils.skipWhile(this, predicate));
   }
 
   distinct(): IEnumerable<T> {
-    return generator(() => Generator.distinct(this));
+    return generator(() => GeneratorUtils.distinct(this));
   }
 
   distinctBy<TOut>(selector: Selector<T, TOut>): IEnumerable<T> {
     if (!selector) throw Exception.argumentNull("selector");
-    return generator(() => Generator.distinctBy(this, selector));
+    return generator(() => GeneratorUtils.distinctBy(this, selector));
   }
 
   union(other: IEnumerable<T> | T[], comparer?: IEqualityComparer<T>): IEnumerable<T> {
-    return generator(() => Generator.union(this, other, comparer));
+    return generator(() => GeneratorUtils.union(this, other, comparer));
   }
 
   intersect(other: IEnumerable<T> | T[], comparer: IEqualityComparer<T>): IEnumerable<T> {
     if (!other) throw Exception.argumentNull("other");
-    return generator(() => Generator.intersect(this, other, comparer));
+    return generator(() => GeneratorUtils.intersect(this, other, comparer));
   }
 
   except(other: IEnumerable<T> | T[], comparer: IEqualityComparer<T>): IEnumerable<T> {
     if (!other) throw Exception.argumentNull("other");
-    return generator(() => Generator.except(this, other, comparer));
+    return generator(() => GeneratorUtils.except(this, other, comparer));
   }
 
   concat(...args: Iterable<T>[]): IEnumerable<T> {
     if (!args.length) throw Exception.argumentNull("args");
-    return generator(() => Generator.concat(this, ...args));
+    return generator(() => GeneratorUtils.concat(this, ...args));
   }
 
   zip<TOut, TSecond = T>(second: Iterable<TSecond>, selector: (f: T, s: TSecond) => TOut): IEnumerable<TOut> {
     if (!second) throw Exception.argumentNull("second");
     if (!selector) throw Exception.argumentNull("selector");
-    return generator(() => Generator.zip(this, second, selector));
+    return generator(() => GeneratorUtils.zip(this, second, selector));
   }
 
   groupBy<TKey, TNext = T>(
@@ -430,16 +438,14 @@ export abstract class IteratorBase<TSource, TNext extends any = TSource> extends
 
   protected current!: TNext;
   protected abstract clone(): IteratorBase<TSource, TNext>;
-  private getIterator(): typeof this {
-    if (this.state === 0) {
-      this.state = 1;
-      return this;
-    }
+  private getIterator(): this {
+    // prettier-ignore
+    if (this.state === 0) { this.state = 1; return this; }
     const copy = this.clone();
     copy.state = 1;
-    return copy as typeof this;
+    // @ts-ignore
+    return copy;
   }
 
   public abstract moveNext(): boolean;
 }
-

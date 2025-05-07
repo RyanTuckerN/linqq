@@ -20,13 +20,12 @@ export class GroupJoinIterator<TOuter, TInner, TKey, TResult> extends IteratorBa
   }
 
   public moveNext(): boolean {
-    this.lookup ??= Lookup.create(this.inner, this.innerKeySelector, (x) => x, this.comparer);
-    let result;
-    while (!(result = this.sourceIterator.next()).done) {
-      this.current = this.resultSelector(
-        result.value,
-        EnumerableBase.from(this.lookup.getGrouping(this.outerKeySelector(result.value), false) ?? []),
-      );
+    this.lookup ??= Lookup.build(this.inner, this.innerKeySelector, (x) => x, this.comparer);
+
+    let outer: IteratorResult<TOuter>;
+    while (!(outer = this.sourceIterator.next()).done) {
+      const group = this.lookup.getGrouping(this.outerKeySelector(outer.value), false) ?? []; // fetch matching inners
+      this.current = this.resultSelector(outer.value, EnumerableBase.from(group));
       return true;
     }
     return false;
@@ -39,6 +38,7 @@ export class GroupJoinIterator<TOuter, TInner, TKey, TResult> extends IteratorBa
       this.outerKeySelector,
       this.innerKeySelector,
       this.resultSelector,
+      this.comparer,
     );
   }
 }

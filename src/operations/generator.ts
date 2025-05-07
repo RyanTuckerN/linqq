@@ -2,7 +2,7 @@ import { createHashSet as hashSet } from "@factories/collection-factory";
 import { IEqualityComparer } from "@interfaces/IEqualityComparer";
 import { PredicateWithIndex, Selector, Predicate } from "../types";
 
-export class Generator {
+export class GeneratorUtils {
   public static *where<T>(source: Iterable<T>, predicate: PredicateWithIndex<T>): Iterable<T> {
     let i = -1;
     for (const item of source) {
@@ -19,7 +19,8 @@ export class Generator {
   }
 
   public static *reverse<T>(source: Iterable<T>): Iterable<T> {
-    yield* [...source].reverse(); // fastest way to reverse an iterable
+    const arr = Array.isArray(source) ? source : [...source];
+    for (let i = arr.length - 1; i >= 0; i--) yield arr[i];
   }
 
   public static *take<T>(source: Iterable<T>, count: number): Iterable<T> {
@@ -65,33 +66,45 @@ export class Generator {
   }
 
   public static *distinct<T>(source: Iterable<T>): Iterable<T> {
-    const set = new Set<T>(source);
-    yield* set.values();
+    const seen = new Set<T>();
+    for (const v of source)
+      if (!seen.has(v)) {
+        seen.add(v);
+        yield v;
+      }
   }
 
-  public static *union<T>(source: Iterable<T>, other: Iterable<T>, comparer?: IEqualityComparer<T>) {
-    let set: { values: () => Iterable<T> };
-    if (comparer) {
-      set = hashSet<T>([...source, ...other], comparer);
+  public static *union<T>(a: Iterable<T>, b: Iterable<T>, cmp?: IEqualityComparer<T>) {
+    if (cmp) {
+      const set = hashSet<T>(a, cmp);
+      yield* a;
+      for (const x of b)
+        if (!set.has(x)) {
+          set.add(x);
+          yield x;
+        }
     } else {
-      set = new Set<T>([...source, ...other]);
+      const seen = new Set<T>();
+      for (const v of a)
+        if (!seen.has(v)) {
+          seen.add(v);
+          yield v;
+        }
+      for (const v of b)
+        if (!seen.has(v)) {
+          seen.add(v);
+          yield v;
+        }
     }
-    yield* set.values();
   }
 
-  public static *intersect<T>(source: Iterable<T>, other: Iterable<T>, comparer?: IEqualityComparer<T>): Iterable<T> {
-    let set: { values: () => Iterable<T>; has: (item: T) => boolean };
-    if (comparer) {
-      set = hashSet<T>(other, comparer);
-    } else {
-      set = new Set<T>(other);
-    }
-    for (const item of source) {
-      if (set.has(item)) yield item;
-    }
+  public static *intersect<T>(a: Iterable<T>, b: Iterable<T>, cmp?: IEqualityComparer<T>) {
+    const set = cmp ? hashSet<T>(b, cmp) : new Set<T>(b);
+    for (const v of a) if (set.has(v)) yield v;
   }
+  
   public static *except<T>(source: Iterable<T>, other: Iterable<T>, comparer?: IEqualityComparer<T>): Iterable<T> {
-    let set: { values: () => Iterable<T>; has: (item: T) => boolean };
+    let set: ISet<T>;
     if (comparer) {
       set = hashSet<T>(other, comparer);
     } else {
@@ -155,4 +168,51 @@ export class Generator {
       secondResult = secondIterator.next();
     }
   }
+
+  /**
+   * Generates a range, optionally transformed by a selector function.
+   * @param count The number of elements to generate.
+   * @param getValue A function to transform the index into a value.
+   * @returns A generator function that yields the generated values.
+   * @example
+   * ```typescript
+   * const sequence = generate(5, (i) => i * 2);
+   * // sequence: 0, 2, 4, 6, 8
+   * ```
+   */
+  public static generator<T = number>(count: number, getValue: (i: number) => T = (i) => i as T): () => Generator<T> {
+    return function* () {
+      for (let i = 0; i < count; i++) {
+        yield getValue(i);
+      }
+    };
+  }
+
+  /**
+   * Creates an array from a generator function.
+   * @param generator A generator function that yields values.
+   * @param getArray A function to transform the generated array into a different type.
+   * @returns The transformed array.
+   * @example
+   * ```typescript
+   * const generator = function* () {
+   *   yield 1;
+   *   yield 2;
+   *   yield 3;
+   * };
+   * const array = arrayFromGenerator(generator, (arr) => arr.map((x) => x * 2));
+   * // array: [2, 4, 6]
+   * ```
+   */
+  public static arrayFromGenerator<T, R = T[]>(
+    generator: Generator<T>,
+    getArray: (array: T[]) => R = (a) => a as R,
+  ): R {
+    return getArray(Array.from(generator));
+  }
+}
+
+interface ISet<T> {
+  has: (item: T) => boolean;
+  values: () => Iterable<T>;
 }

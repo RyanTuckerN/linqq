@@ -31,18 +31,16 @@ export class WhereSelectArrayIterator<TSource, TOut> extends IteratorBase<TSourc
 
   public override select<TNext>(selector: (x: TSource, i: number) => TNext): IEnumerable<TNext> {
     if (this._selector.length === 1) {
-      return Utils.cast<IEnumerable<TNext>>(
-        new WhereSelectArrayIterator(
-          this.source,
-          this._predicate,
-          Utils.combineSelectors(this._selector as any, selector as any),
-        ),
-      );
+      return new WhereSelectArrayIterator(
+        this.source,
+        this._predicate,
+        Utils.combineSelectors(this._selector as any, selector as any),
+      ) as unknown as IEnumerable<TNext>;
     }
     return super.select(selector);
   }
 
   public override where(predicate: (x: TSource) => boolean): IEnumerable<TSource> {
-    return new WhereIterator(Utils.cast(this), predicate);
+    return new WhereIterator(this as unknown as IEnumerable<TSource>, predicate);
   }
 }

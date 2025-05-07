@@ -59,4 +59,10 @@ export interface IDictionary<TKey, TValue> extends IEnumerable<KeyValuePair<TKey
    * @returns [true, TValue] or [false, undefined]
    */
   tryGetValue(key: TKey): [true, TValue] | [false, undefined];
+  /**
+   * Apply a function to each key-value pair in the dictionary.
+   * @param action The function to apply to each key-value pair.
+   * @param thisArg The value to use as `this` when executing the function.
+   */
+  forEach(action: (kvp: KeyValuePair<TKey, TValue>) => void, thisArg?: any): void;
 }

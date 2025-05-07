@@ -1,7 +1,7 @@
 import { linqq as linq } from "../src";
 
 test("getRandom() / popRandom() / sample()", () => {
-  const list = linq([1, 2, 3, 4, 5]).toList();
+  const list = linq([1, 2, 3, 4, 5]).toExtendedList();
   
   const random = list.getRandom();
   expect(list.toArray().includes(random)).toBe(true);
@@ -21,7 +21,7 @@ test("getRandom() / popRandom() / sample()", () => {
 });
 
 test("frequencies()", () => {
-  const list = linq([1, 2, 2, 3, 3, 3]).toList();
+  const list = linq([1, 2, 2, 3, 3, 3]).toExtendedList();
   const freq = list.frequencies();
   
   expect(freq.get(1)).toBe(1);
@@ -32,17 +32,17 @@ test("frequencies()", () => {
     { id: 1, type: 'A' },
     { id: 2, type: 'B' },
     { id: 3, type: 'A' }
-  ]).toList();
+  ]).toExtendedList();
   
   const objFreq = objList.frequencies();
   expect(objFreq.count()).toBe(3); // Each object is unique by reference
   
-  const empty = linq<number>([]).toList();
+  const empty = linq<number>([]).toExtendedList();
   expect(empty.frequencies().count()).toBe(0);
 });
 
 test("top() / bottom()", () => {
-  const list = linq([5, 3, 1, 4, 2]).toList();
+  const list = linq([5, 3, 1, 4, 2]).toExtendedList();
   
   expect(list.top(2).toArray()).toEqual([1, 2]);
   
@@ -54,13 +54,13 @@ test("top() / bottom()", () => {
   expect(list.top(0).toArray()).toEqual([]);
   expect(list.top(10).length).toBe(5);
   
-  const empty = linq<number>([]).toList();
+  const empty = linq<number>([]).toExtendedList();
   expect(empty.top(2).toArray()).toEqual([]);
   expect(empty.bottom(2).toArray()).toEqual([]);
 });
 
 test("paginate()", () => {
-  const list = linq([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]).toList();
+  const list = linq([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]).toExtendedList();
   
   expect(list.paginate(3, 1).toArray()).toEqual([1, 2, 3]);
   
@@ -73,6 +73,6 @@ test("paginate()", () => {
   expect(list.paginate(0).toArray()).toEqual([]);
   expect(list.paginate(-1).toArray()).toEqual([]);
   
-  const empty = linq<number>([]).toList();
+  const empty = linq<number>([]).toExtendedList();
   expect(empty.paginate(3).toArray()).toEqual([]);
 });

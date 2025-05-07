@@ -6,6 +6,11 @@ import { IEnumerable } from "../src/interfaces/IEnumerable";
 type TestType = { id: number; name: string };
 function isIdempotent(expression: (obj: IEnumerable<TestType>) => any) {
   return () => {
+    const dataControl = Object.freeze([
+      { id: 1, name: "foo" },
+      { id: 2, name: "bar" },
+      { id: 3, name: "baz" },
+    ]);
     const data = [
       { id: 1, name: "foo" },
       { id: 2, name: "bar" },
@@ -16,6 +21,7 @@ function isIdempotent(expression: (obj: IEnumerable<TestType>) => any) {
     let result2 = expression(source).toArray();
     expect(result1).toEqual(result2);
     expect(data).toEqual(source.toArray());
+    expect(dataControl).toEqual(data);
   };
 }
 
@@ -174,6 +180,11 @@ test(
 
 function elementOperationIsIdempotent(expression: (obj: IEnumerable<TestType>) => any) {
   return () => {
+    const dataControl = Object.freeze([
+      { id: 1, name: "foo" },
+      { id: 2, name: "bar" },
+      { id: 3, name: "baz" },
+    ]);
     const data = [
       { id: 1, name: "foo" },
       { id: 2, name: "bar" },
@@ -184,6 +195,7 @@ function elementOperationIsIdempotent(expression: (obj: IEnumerable<TestType>) =
     let result2 = expression(source);
     expect(result1).toEqual(result2);
     expect(data).toEqual(source.toArray());
+    expect(dataControl).toEqual(data);
   };
 }
 test(

@@ -17,6 +17,16 @@ test(" *** Aggregation/Reduction ***", () => {
 
 test("count() - numbers", () => {
   expect(linq(numsArray).count()).toBe(5);
+  expect(linq(numsArray).count((x) => x > 2)).toBe(3);
+  expect(linq(numsArray).count((x) => x > 10)).toBe(0);
+  expect(linq(emptyLinqArray).count()).toBe(0);
+  expect(linq(emptyLinqArray).count((x) => x > 2)).toBe(0);
+  expect(linq([0, 0, 0, 0, 0, 0]).count()).toBe(6);
+  expect(linq([0, 0, 0, 0, 0, 0]).count((x) => x > 2)).toBe(0);
+  expect(linq([0, 0, 0, 0, 0, 0]).count((x) => x > -1)).toBe(6);
+  // @ts-ignore
+  expect(linq(emptyLinqArray).append(1).count()).toBe(1);
+  expect(linq([undefined, undefined, undefined]).count()).toBe(3);
 });
 
 test("sum() - numbers", () => {
@@ -36,6 +46,11 @@ test("sum() - objects", () => {
 
 test("average() - numbers", () => {
   expect(linq(numsArray).average()).toBe(3);
+  expect(linq(numsArray).average((x) => x)).toBe(3);
+  expect(linq(numsArray).average((x) => x * 2)).toBe(6);
+  expect(() => emptyLinqArray.average()).toThrow();
+  expect(() => emptyLinqArray.average((x) => x)).toThrow();
+  expect(linq([0,0,0,0,0,0]).average()).toBe(0);
 });
 
 test("average() - objects", () => {

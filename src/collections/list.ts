@@ -388,9 +388,7 @@ export class List<T> extends EnumerableBase<T> implements IExtendedList<T> {
   public override first(predicate?: Predicate<T>): T {
     this.throwIfEmpty();
     let index = 0;
-    if (predicate) {
-      index = this.source.findIndex(predicate);
-    }
+    if (predicate) index = this.source.findIndex(predicate);
     if (!this.hasIndex(index)) throw Exception.noMatch();
     return this.source[index];
   }

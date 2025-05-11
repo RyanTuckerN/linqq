@@ -24,12 +24,23 @@ test(" *** Element ***", () => {
 
 test("first()", () => {
   expect(linq(numsArray).first()).toBe(1);
-  // expect(() => emptyLinqArray.first()).toThrow(Validator.SEQUENCE_EMPTY);
+  expect(linq(numsArray).first((x) => x > 2)).toBe(3);
+  expect(() => linq(numsArray).first((x) => x > 5)).toThrow();
+  expect(() => emptyLinqArray.first()).toThrow();
+  expect(linq(undefinedArray).first()).toBe(undefined);
+  expect(linq(undefinedArray).first((x) => x === undefined)).toBe(undefined);
+  expect(() => linq(undefinedArray).first((x) => x !== undefined)).toThrow();
+
 });
 
 test("last()", () => {
   expect(linq(numsArray).last()).toBe(5);
-  // expect(() => emptyLinqArray.last()).toThrow(Validator.SEQUENCE_EMPTY);
+  expect(() => emptyLinqArray.last()).toThrow();
+  expect(linq(numsArray).last((x) => x < 4)).toBe(3);
+  expect(() => linq(numsArray).last((x) => x < 1)).toThrow();
+  expect(linq(undefinedArray).last()).toBe(undefined);
+  expect(linq(undefinedArray).last((x) => x === undefined)).toBe(undefined);
+  expect(() => linq(undefinedArray).last((x) => x !== undefined)).toThrow();
 });
 
 test("single()", () => {
@@ -44,6 +55,10 @@ test("elementAt()", () => {
   expect(linq(numsArray).elementAt(2)).toBe(3);
   expect(() => emptyLinqArray.elementAt(0)).toThrow(Exception.INDEX_OUT_OF_RANGE);
   expect(() => linq(numsArray).elementAt(10)).toThrow(Exception.INDEX_OUT_OF_RANGE);
+  expect(() => linq(numsArray).elementAt(-1)).toThrow(Exception.INDEX_OUT_OF_RANGE);
+  expect(linq(undefinedArray).elementAt(0)).toBe(undefined);
+  expect(linq(undefinedArray).elementAt(1)).toBe(undefined);
+  expect(() => linq(undefinedArray).elementAt(10)).toThrow(Exception.INDEX_OUT_OF_RANGE);
 });
 
 test("firstOrDefault()", () => {
@@ -51,6 +66,10 @@ test("firstOrDefault()", () => {
   expect(linq(numsArray).firstOrDefault((x) => x > 2)).toBe(3);
   expect(linq(numsArray).firstOrDefault((x) => x > 5)).toBe(undefined);
   expect(emptyLinqArray.firstOrDefault()).toBe(undefined);
+  expect(linq(undefinedArray).firstOrDefault()).toBe(undefined);
+  expect(linq(undefinedArray).firstOrDefault((x) => x === undefined)).toBe(undefined);
+  expect(linq(undefinedArray).firstOrDefault((x) => x !== undefined)).toBe(undefined);
+  expect(linq(undefinedArray).firstOrDefault((x) => x === undefined)).toBe(undefined);
 });
 
 test("lastOrDefault()", () => {
@@ -58,6 +77,9 @@ test("lastOrDefault()", () => {
   expect(linq(numsArray).lastOrDefault((x) => x < 4)).toBe(3);
   expect(linq(numsArray).lastOrDefault((x) => x < 1)).toBe(undefined);
   expect(emptyLinqArray.lastOrDefault()).toBe(undefined);
+  expect(linq(undefinedArray).lastOrDefault()).toBe(undefined);
+  expect(linq(undefinedArray).lastOrDefault((x) => x === undefined)).toBe(undefined);
+  expect(linq(undefinedArray).lastOrDefault((x) => x !== undefined)).toBe(undefined);
 });
 
 test("singleOrDefault()", () => {
@@ -66,12 +88,18 @@ test("singleOrDefault()", () => {
   expect(() => linq([2, 2]).singleOrDefault((x) => x === 2)).toThrow(Exception.SEQUENCE_MULTIPLE);
   expect(linq([2, 2]).singleOrDefault((x) => x > 2)).toBe(undefined);
   expect(emptyLinqArray.singleOrDefault()).toBe(undefined);
+  expect(() => linq(undefinedArray).singleOrDefault()).toThrow();
+  expect(linq(undefinedArray).singleOrDefault((x) => x !== undefined)).toBe(undefined);
 });
 
 test("elementAtOrDefault()", () => {
   expect(linq(numsArray).elementAtOrDefault(2)).toBe(3);
   expect(linq(numsArray).elementAtOrDefault(10)).toBe(undefined);
   expect(emptyLinqArray.elementAtOrDefault(0)).toBe(undefined);
+  expect(linq(numsArray).elementAtOrDefault(-1)).toBe(undefined);
+  expect(linq(undefinedArray).elementAtOrDefault(0)).toBe(undefined);
+  expect(linq(undefinedArray).elementAtOrDefault(1)).toBe(undefined);
+  expect(linq(undefinedArray).elementAtOrDefault(10)).toBe(undefined);
 });
 
 test("append()", () => {
@@ -80,3 +108,4 @@ test("append()", () => {
 
 const emptyLinqArray = linq([]);
 const numsArray = [1, 2, 3, 4, 5];
+const undefinedArray = [undefined, undefined, undefined];

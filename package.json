@@ -1,6 +1,6 @@
 {
   "name": "linqq",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Why use arrays when you can use linqq? Full LINQ implementation for JavaScript & TypeScript. Powerful iterable utilities inspired by .NET's LINQ",
   "files": [
     "dist",

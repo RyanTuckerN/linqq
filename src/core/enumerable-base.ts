@@ -131,7 +131,7 @@ export class EnumerableBase<T> implements IEnumerable<T> {
   }
 
   toList(): IList<T> {
-    return isList<T>(this) ? this : Array.isArray(this.source) ? list(this.source) : list(this); // iterate lazily only when required
+    return isList<T>(this) ? this : list(this);
   }
 
   toExtendedList(): IExtendedList<T> {
